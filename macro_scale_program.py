@@ -1,22 +1,22 @@
 import numpy as np 
 import itertools as it
 def u_arrangement(data,Global_displacement,s,u_element,t): # The function for arranging  the displacement element accessed
-    for name, age in data.items():    # for printing the value's key
-        if age == s:
-            i=name
+    for n, a in data.items():    # for printing the value's key
+        if a == s:
+            i=n
             u_element[t][0]=Global_displacement[i][0]
             u_element[t+1][0]=Global_displacement[i+1][0]
     return u_element
 
 def assemble_function(data,Assignment_matrixs,s,j): # The function to assemble the assignment matrixs
-    for name, age in data.items():    # for printing the value's key
-        if age == s:
-            i=name
+    for n, a in data.items():    # for printing the value's key
+        if a == s:
+            i=n
             Assignment_matrixs[j][i]=1
             Assignment_matrixs[j+1][i+1]=1
     return(Assignment_matrixs)
 
-def Material_routine(MU,lamda,u_element,B,h,B_ps,C_al,P,j,yield_stress): # Material routine 
+def Material_routine(MU,lamda,u_element,B,h,B_ps,C_al,P,j,yield_stress,stress_33): # Material routine 
     #material routine will return the C_t matrixs,stress at gauss points and the internal state variables
     Norm_vector=np.zeros((6,1))
     P_sym=np.array([[(2/3),(-1/3),(-1/3),0,0,0],[(-1/3),(2/3),(-1/3),0,0,0],[(-1/3),(-1/3),(2/3),0,0,0],[0,0,0,(1/2),0,0],[0,0,0,0,(1/2),0],[0,0,0,0,0,(1/2)]])
@@ -67,6 +67,7 @@ def Material_routine(MU,lamda,u_element,B,h,B_ps,C_al,P,j,yield_stress): # Mater
     stress_element=deviatoric_stress + k*trace_strain*Identity_matrixs
     C_tangential=deviatoric_tangent_stiffness + k*(Identity_matrixs@np.transpose(Identity_matrixs))
     A=np.array([2,3,4])
+    stress_33[j][0]=stress_element[2][0]
     stress_element=np.delete(stress_element,A,axis=0)
     C_tangential=np.delete(C_tangential,A,axis=0)
     C_tangential=np.delete(C_tangential,A,axis=1)
@@ -74,9 +75,9 @@ def Material_routine(MU,lamda,u_element,B,h,B_ps,C_al,P,j,yield_stress): # Mater
         plastic_strain[i][0]=0 # plain strain 
     B_ps[j]=np.transpose(plastic_strain)
     C_al[j][0]=np.transpose(alpha)
-    return [C_tangential,stress_element,B_ps,C_al]
+    return [C_tangential,stress_element,B_ps,C_al,stress_33]
 
-def Element_routine(Xe,Element_stiffness_matrixs,MU,lamda,u_element,F_int_Element,Le,thickness_plate,h,B_ps,C_al,P,yield_stress): # Elment routine
+def Element_routine(Xe,Element_stiffness_matrixs,MU,lamda,u_element,F_int_Element,Le,thickness_plate,h,B_ps,C_al,P,yield_stress,stress_33): # Elment routine
     #element routien will return the elements stiffness matrixs
     j=0
     x_values=np.array([-0.57735,-0.57735,0.57735,-0.57735,0.57735,0.57735,-0.57735,0.57735])
@@ -90,14 +91,14 @@ def Element_routine(Xe,Element_stiffness_matrixs,MU,lamda,u_element,F_int_Elemen
         Jacobin_matrixs = derivative_x @ Xe
         B_vector= np.linalg.inv(Jacobin_matrixs) @ derivative_x
         B=np.array([[B_vector[0][0],0,B_vector[0][1],0,B_vector[0][2],0,B_vector[0][3],0],[0,B_vector[1][0],0,B_vector[1][1],0,B_vector[1][2],0,B_vector[1][3]],[B_vector[1][0],B_vector[0][0],B_vector[1][1],B_vector[0][1],B_vector[1][2],B_vector[0][2],B_vector[1][3],B_vector[0][3]]])
-        [C_tangential,stress_element,B_ps,C_al]=Material_routine(MU,lamda,u_element,B,h,B_ps,C_al,P,j,yield_stress)
+        [C_tangential,stress_element,B_ps,C_al,stress_33]=Material_routine(MU,lamda,u_element,B,h,B_ps,C_al,P,j,yield_stress,stress_33)
         j=j+1 
         Element_stiffness_matrixs= Element_stiffness_matrixs + (np.transpose(B) @ C_tangential @ B)* np.linalg.det(Jacobin_matrixs)*thickness_plate
         F_int_Element= F_int_Element + (np.transpose(B) @ stress_element ) * np.linalg.det(Jacobin_matrixs)*thickness_plate
     #F_int_Element= Element_stiffness_matrixs @ u_element
     #if(np.linalg.norm(F_int_Element)==np.linalg.norm(F_int_Element_1)):
         #print("yes")
-    return [Element_stiffness_matrixs,F_int_Element,B_ps,C_al]
+    return [Element_stiffness_matrixs,F_int_Element,B_ps,C_al,stress_33]
 
 #Elastic program for 2D Bilinear Element 
 #Here, we are considering a point load as for building the basic strucutre for the required element
@@ -129,14 +130,16 @@ Global_displacement=np.zeros((2*total_nodes,1))
 Global_plastic_strain=np.zeros((Number_of_elements,6))
 Gauss_point_plastic_strain=np.zeros((Number_of_elements,4,6))
 Gauss_point_alpha=np.zeros((Number_of_elements,4,1))
+Gauss_point_stress_33=np.zeros((Number_of_elements,4,1))
+stress_33=np.zeros((4,1))
 plastic_strain=np.zeros((6,1))
 u_element=np.zeros((8,1))
 F_int_Element=np.zeros((8,1))
 print("Enter the forces value in newton for each node of interest\n")
 print("Enter zero if no forces is applied on the node\n")
-# The force part to be made into incremental wise after figuring the flow of the program
-for i in range(0,len(Global_F_external),1):
+for i in range(0,len(Global_F_external),1): # Point Load of interest
     Global_F_external[i]=eval(input(" "))
+
 Xe=np.array([[0,0],[Le,0],[0,He],[Le,He]])
 x_disp=np.array([[Le,0],[Le,0],[Le,0],[Le,0]])
 y_disp=np.array([[0,He],[0,He],[0,He],[0,He]])
@@ -193,12 +196,15 @@ for time_step in range(1,11,1): # time step is split into 10 parts
                 B=B.reshape((4,6))
                 C=Gauss_point_alpha[P]
                 C=C.reshape((4,1))
-                [Element_stiffness_matrixs,F_int_Element,B,C] = Element_routine(Xe,Element_stiffness_matrixs,MU,lamda,u_element,F_int_Element,Le,thickness_plate,h,B,C,P,yield_stress)
+                D=(Gauss_point_stress_33[P])
+                stress_33=D.reshape((4,1))
+                [Element_stiffness_matrixs,F_int_Element,B,C,stress_33] = Element_routine(Xe,Element_stiffness_matrixs,MU,lamda,u_element,F_int_Element,Le,thickness_plate,h,B,C,P,yield_stress,stress_33)
                 Global_stiffness_matrixs=Global_stiffness_matrixs + (np.transpose(Assignment_matrixs) @ Element_stiffness_matrixs @ Assignment_matrixs)
                 F=(np.transpose(Assignment_matrixs) @ F_int_Element)
                 Global_F_internal=Global_F_internal + F
                 Gauss_point_plastic_strain[P]=B
                 Gauss_point_alpha[P]=C
+                Gauss_point_stress_33[P]=stress_33
             if((M*N)>1):
                 Xe=Xe + y_disp       
         #print('The obtained stiffness matrixa is:\n')
@@ -213,9 +219,9 @@ for time_step in range(1,11,1): # time step is split into 10 parts
         A=[]
         #Reduction of matirxs sizes
         for j in range(0,M+1,1):    
-            for name, age in data.items():    # for printing the value's key
-                if age == Node_Numbering[j][0]:
-                    i=name
+            for n, a in data.items():    # for printing the value's key
+                if a == Node_Numbering[j][0]:
+                    i=n
                     A.append(i)
                     A.append(i+1)
         A=np.asarray(A)
