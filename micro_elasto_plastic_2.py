@@ -3,9 +3,8 @@ import math as mi
 import matplotlib.pyplot as plt
 ### The code is for the micro-scale FEM analysis
 ### The basic theory of the FEM analysis of the micro-scale is that, as we have assumed periodic boundary condition- me have paired the
-### boundary nodes. This leads to the concept of independent and dependent nodes. The system as a whole has macro strain as the external parameter.
-###  For the calculated independent nodes displacement, we are finding the displacements of the dependent nodes. The behavior of the system is 
-### analysed.
+### boundary nodes. This leads to the concept of independent and dependent nodes wrt strain. The system as a whole has macro strain as 
+### the external parameter.For the known displacement of the dependent node, we fidn the displacement of the independent nodes wrt strain.
 
 ### The RVE Element is considered with a plate with a hole in the centre
 ### The micro scale is called at each gauss point of the macro element assumed 
@@ -29,13 +28,78 @@ def Displacement_arrangement(u_element,sub_ii,sub_dd,u_independent,u_dependent,n
 			p_2=p_2+1
 	return [u_element]
 ### This function is for the calculation of the material model variables.
-def Material_routine(MU,lamda,stress_element,B,u_element):
-	C_tangential=np.array([[2*MU+lamda,lamda,0],[lamda,2*MU+lamda,0],[0,0,MU]])
-	strain_element= B @ u_element
-	stress_element= C_tangential @ strain_element
-	return [C_tangential,stress_element]
+def Material_routine(MU,lamda,stress_element,B,u_element,h,B_ps,C_al,P,j,yield_stress,stress_33):
+    #material routine will return the C_t matrixs,stress at gauss points and the internal state variables
+    Norm_vector=np.zeros((6,1))
+    P_sym=np.array([[(2/3),(-1/3),(-1/3),0,0,0],[(-1/3),(2/3),(-1/3),0,0,0],[(-1/3),(-1/3),(2/3),0,0,0],[0,0,0,1,0,0],[0,0,0,0,1,0],[0,0,0,0,0,1]])
+    Strain_element=np.zeros((3,1))
+    Strain_element= B @ u_element
+    for i in range(2,5,1):
+        Strain_element= np.insert(Strain_element,i,0,axis=0)
+    for i in range(3,6,1):
+       Strain_element[i][0]=(Strain_element[i][0])/2
+    print("Strain_element:\n",Strain_element)
+    trace_strain= Strain_element[0][0]+Strain_element[1][0]+Strain_element[2][0]
+    Identity_matrixs=np.array([[1],[1],[1],[0],[0],[0]])
+    deviatoric_strain= Strain_element - (trace_strain*Identity_matrixs)/3
+    plastic_strain=(B_ps[j].reshape(1,6))
+    #print(plastic_strain)
+    alpha=C_al[j][0]
+    deviatoric_stress= 2*MU*(deviatoric_strain-np.transpose(plastic_strain))
+    #deviatoric_stress[2][0]=-2*MU*plastic_strain[0][2] ### replacing the strain 33 component
+    deviatoric_stress_trial=deviatoric_stress
+    s=0
+    s1=1
+    for i in range(0,6,1):
+        if(i>2):
+            s1=2
+        s=s+(deviatoric_stress_trial[i][0]*deviatoric_stress_trial[i][0])*s1
+    mag_deviatoric=(s)**(1/2)
+    if(mag_deviatoric > 0):
+        Norm_vector=deviatoric_stress/mag_deviatoric
+    drag_stress=h*alpha
+    plastic_fn=mag_deviatoric-(2/3)**(1/2)*(yield_stress + drag_stress)
+    if(plastic_fn<10**-6):
+        print("Elastic calculation")
+        deviatoric_stress=deviatoric_stress_trial
+        deviatoric_tangent_stiffness= 2*MU*P_sym
+        plastic_strain=np.transpose(plastic_strain)
+        alpha=np.transpose(alpha)
+    else:
+        print("Plastic calculation")
+        plastic_corrector= ((plastic_fn)/(2*MU + (2*h)/3))
+        deviatoric_stress = deviatoric_stress_trial - 2*MU*Norm_vector*plastic_corrector
+        s=0
+        s1=1
+        for i in range(0,6,1):
+            if(i>2):
+                s1=2
+            s=s+(deviatoric_stress[i][0]*deviatoric_stress[i][0])*s1
+        mag_deviatoric_1=(s)**(1/2)
+        plastic_strain= np.transpose(plastic_strain) + plastic_corrector*Norm_vector
+        #plastic_strain[2][0]=-(plastic_strain[0][0]+plastic_strain[1][0])
+        alpha = np.transpose(alpha) + (2/3)**(1/2)*(plastic_corrector)
+        S2 = (plastic_fn/mag_deviatoric)
+        S3 = (3*MU/(3*MU + h))
+        beta_1= 1-(S2*S3)
+        beta_2= (1-S2)*S3
+        deviatoric_tangent_stiffness= (2*MU*beta_1*P_sym) - (2*MU*beta_2*Norm_vector @ np.transpose(Norm_vector))
+    k=((3*lamda + 2*MU)/3)
+    stress_element=deviatoric_stress + k*trace_strain*Identity_matrixs
+    C_tangential=deviatoric_tangent_stiffness + k*(Identity_matrixs @ np.transpose(Identity_matrixs))
+    A=np.array([2,3,4])
+    stress_33[j][0]= stress_element[2][0] #lamda*(Strain_element[0][0]+Strain_element[1][0]) - 2*MU*plastic_strain[2][0]
+    stress_element=np.delete(stress_element,A,axis=0)
+    C_tangential=np.delete(C_tangential,A,axis=0)
+    C_tangential=np.delete(C_tangential,A,axis=1)
+    for i in range(3,5,1):
+        plastic_strain[i][0]=0 # plain strain 
+    B_ps[j]=np.transpose(plastic_strain)
+    C_al[j][0]=np.transpose(alpha)
+    return [C_tangential,stress_element,B_ps,C_al]
 ###The function for the calculation of the element's variable.
-def Element_routine(x_element,Element_stiffness_micro,F_int_Element,stress_element,u_element,MU,lamda,thickness_plate):
+def Element_routine(x_element,Element_stiffness_micro,F_int_Element,stress_element,u_element,MU,lamda,h,B_ps,C_al,P,yield_stress,stress_33,thickness_plate):
+	j=0
 	x_values=np.array([-0.57735,-0.57735,0.57735,-0.57735,-0.57735,0.57735,0.57735,0.57735])
 	Element_stiffness_micro=np.zeros((8,8))
 	F_int_Element=np.zeros((8,1))
@@ -46,10 +110,11 @@ def Element_routine(x_element,Element_stiffness_micro,F_int_Element,stress_eleme
 		Jacobin_matrixs = derivative_x @ x_element
 		B_vector= np.linalg.inv(Jacobin_matrixs) @ derivative_x
 		B=np.array([[B_vector[0][0],0,B_vector[0][1],0,B_vector[0][2],0,B_vector[0][3],0],[0,B_vector[1][0],0,B_vector[1][1],0,B_vector[1][2],0,B_vector[1][3]],[B_vector[1][0],B_vector[0][0],B_vector[1][1],B_vector[0][1],B_vector[1][2],B_vector[0][2],B_vector[1][3],B_vector[0][3]]])
-		[C_tangential,stress_element]=Material_routine(MU,lamda,stress_element,B,u_element) 
+		[C_tangential,stress_element,B_ps,C_al]=Material_routine(MU,lamda,stress_element,B,u_element,h,B_ps,C_al,P,j,yield_stress,stress_33) 
+		j=j+1
 		Element_stiffness_micro= Element_stiffness_micro + (np.transpose(B) @ C_tangential @ B)* np.linalg.det(Jacobin_matrixs)*thickness_plate
 		F_int_Element= F_int_Element + (np.transpose(B) @ stress_element ) * np.linalg.det(Jacobin_matrixs)*thickness_plate
-	return [Element_stiffness_micro,F_int_Element]
+	return [Element_stiffness_micro,F_int_Element,B_ps,C_al]
 
 ############################### Input parameter ########################################
 ### units as of now in Meters
@@ -58,8 +123,11 @@ micro_length=10*10**-6
 micro_height=10*10**-6
 thickness_plate=1*10**-6
 void_radius=2*10**-6
+### Material Properties ###
 Youngs_modulus=210E9 #N/meters
 Poissons_ratio=0.30
+yield_stress=95E6
+h=500e6 #Hardening parameter
 MU=(Youngs_modulus/(2*(1+Poissons_ratio)))
 lamda=((Poissons_ratio*Youngs_modulus)/((1-2*Poissons_ratio)*(1+Poissons_ratio)))
 ### centre of the void in the RVE assumed -(a,b)
@@ -72,6 +140,9 @@ global_k_di=np.zeros((8,27)) #### for the  calculation of the summed k_di
 global_k_dd=k_dd=np.zeros((8,8)) #### for the  calculation of the summed k_dd
 global_F_int_ii=np.zeros((27,1)) #### for the calculation of the summed f_int_d.
 global_F_int_dd=np.zeros((8,1)) #### for the calculation of the summed f_int_i.
+Gauss_point_plastic_strain=np.zeros((8,4,6))
+Gauss_point_alpha=np.zeros((8,4,1))
+Gauss_point_stress_33=np.zeros((8,4,1)) 
 ### Element variables(local)
 Element_stiffness_micro=np.zeros((8,8))
 F_int_ii=np.zeros((27,1)) ### for the global position arrangement ii.
@@ -144,7 +215,8 @@ for i in range(0,8,2):
 ### The macro strain values are entered here... The coupling part takes place here
 NR_delta_u=np.ones((24,1))
 NR_U=np.zeros((24,1))
-Strain_macro=np.array([[0.2],[0.2],[0.4]])
+### Strain input
+Strain_macro=np.array([[5.33*10**-4],[-3.04*10**-5],[2.78*10**-5]])
 print("The macro strain is given as input now")
 for i in range(0,3,1):
 	u_independent[i+24][0]=Strain_macro[i][0]
@@ -163,6 +235,7 @@ count=0
 ### matrixs and elements stress update(for the calculation of the F_e_interanl).
 ### The element parameters calculation starts here.
 while (np.linalg.norm(NR_delta_u,np.inf) > (0.005*np.linalg.norm(NR_U,np.inf))):
+	P=0
 	count=count + 1
 	global_k_ii=np.zeros((27,27)) 
 	global_k_id=np.zeros((27,8))
@@ -172,7 +245,7 @@ while (np.linalg.norm(NR_delta_u,np.inf) > (0.005*np.linalg.norm(NR_U,np.inf))):
 	global_F_int_dd=np.zeros((8,1))
 	print(np.linalg.norm(NR_delta_u,np.inf))
 	print((0.005*np.linalg.norm(NR_U,np.inf)))
-	u_dependent= A_matrix @ u_independent
+	u_dependent= A_matrix @ u_independent ### The dependent node has relation with strain.
 	for i_1 in range(0,8,1):
 		print("Element",i_1)
 		x_element=np.array([1,1])
@@ -215,7 +288,18 @@ while (np.linalg.norm(NR_delta_u,np.inf) > (0.005*np.linalg.norm(NR_U,np.inf))):
 		dummy_2=np.arange(13,21,1)
 		u_element=Displacement_arrangement(u_element,sub_ii,sub_dd,u_independent,u_dependent,nodal_i_d)
 		u_element=np.reshape(u_element,(8,1))
-		[Element_stiffness_micro,F_int_Element]=Element_routine(x_element,Element_stiffness_micro,F_int_Element,stress_element,u_element,MU,lamda,thickness_plate)
+        # temparary local variables
+		B=Gauss_point_plastic_strain[P]
+		B=B.reshape((4,6))
+		C=Gauss_point_alpha[P]
+		C=C.reshape((4,1))
+		D=(Gauss_point_stress_33[P])
+		stress_33=D.reshape((4,1))
+		[Element_stiffness_micro,F_int_Element,B,C]=Element_routine(x_element,Element_stiffness_micro,F_int_Element,stress_element,u_element,MU,lamda,h,B,C,P,yield_stress,stress_33,thickness_plate)
+		Gauss_point_plastic_strain[P]=B
+		Gauss_point_alpha[P]=C
+		Gauss_point_stress_33[P]=stress_33
+		P=P+1
 		### Arrangment of the dependent and independent nodes stiffness values in 4 different combination matixs.
         ### The below scalar variables,before for loop,are the temporary variables for calculation.
         ### The scalar variables
@@ -335,6 +419,7 @@ while (np.linalg.norm(NR_delta_u,np.inf) > (0.005*np.linalg.norm(NR_U,np.inf))):
 	NR_U=(NR_U.reshape(24,1))
 	for i in range(0,len(NR_U),1):
 		u_independent[i][0]=NR_U[i][0]
+	
 
 print("count:\n",count)
 print("u_independent\n",u_independent)

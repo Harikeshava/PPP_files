@@ -19,21 +19,22 @@ def assemble_function(data,Assignment_matrixs,s,j): # The function to assemble t
 def Material_routine(MU,lamda,u_element,B,h,B_ps,C_al,P,j,yield_stress,stress_33): # Material routine 
     #material routine will return the C_t matrixs,stress at gauss points and the internal state variables
     Norm_vector=np.zeros((6,1))
-    P_sym=np.array([[(2/3),(-1/3),(-1/3),0,0,0],[(-1/3),(2/3),(-1/3),0,0,0],[(-1/3),(-1/3),(2/3),0,0,0],[0,0,0,(1/2),0,0],[0,0,0,0,(1/2),0],[0,0,0,0,0,(1/2)]])
+    P_sym=np.array([[(2/3),(-1/3),(-1/3),0,0,0],[(-1/3),(2/3),(-1/3),0,0,0],[(-1/3),(-1/3),(2/3),0,0,0],[0,0,0,1,0,0],[0,0,0,0,1,0],[0,0,0,0,0,1]])
     Strain_element=np.zeros((3,1))
     Strain_element= B @ u_element
     for i in range(2,5,1):
         Strain_element= np.insert(Strain_element,i,0,axis=0)
-    #print("Strain_element:\n",Strain_element)
+    for i in range(3,6,1):
+       Strain_element[i][0]=(Strain_element[i][0])/2
+    print("Strain_element:\n",Strain_element)
     trace_strain= Strain_element[0][0]+Strain_element[1][0]+Strain_element[2][0]
     Identity_matrixs=np.array([[1],[1],[1],[0],[0],[0]])
     deviatoric_strain= Strain_element - (trace_strain*Identity_matrixs)/3
-    for i in range(3,6,1):
-        deviatoric_strain[i][0]=(deviatoric_strain[i][0])/2
     plastic_strain=(B_ps[j].reshape(1,6))
     #print(plastic_strain)
     alpha=C_al[j][0]
-    deviatoric_stress= 2*MU*(deviatoric_strain-np.transpose(plastic_strain))
+    deviatoric_stress = 2*MU*(deviatoric_strain-np.transpose(plastic_strain))
+    #deviatoric_stress[2][0]=-2*MU*plastic_strain[0][2] ### replacing the strain 33 component
     deviatoric_stress_trial=deviatoric_stress
     s=0
     s1=1
@@ -54,9 +55,17 @@ def Material_routine(MU,lamda,u_element,B,h,B_ps,C_al,P,j,yield_stress,stress_33
         alpha=np.transpose(alpha)
     else:
         print("Plastic calculation")
-        plastic_corrector= (plastic_fn)/(2*MU + (2/3)*h)
+        plastic_corrector= ((plastic_fn)/(2*MU + (2*h)/3))
         deviatoric_stress = deviatoric_stress_trial - 2*MU*Norm_vector*plastic_corrector
+        s=0
+        s1=1
+        for i in range(0,6,1):
+            if(i>2):
+                s1=2
+            s=s+(deviatoric_stress[i][0]*deviatoric_stress[i][0])*s1
+        mag_deviatoric_1=(s)**(1/2)
         plastic_strain= np.transpose(plastic_strain) + plastic_corrector*Norm_vector
+        #plastic_strain[2][0]=-(plastic_strain[0][0]+plastic_strain[1][0])
         alpha = np.transpose(alpha) + (2/3)**(1/2)*(plastic_corrector)
         S2 = (plastic_fn/mag_deviatoric)
         S3 = (3*MU/(3*MU + h))
@@ -65,9 +74,9 @@ def Material_routine(MU,lamda,u_element,B,h,B_ps,C_al,P,j,yield_stress,stress_33
         deviatoric_tangent_stiffness= (2*MU*beta_1*P_sym) - (2*MU*beta_2*Norm_vector @ np.transpose(Norm_vector))
     k=((3*lamda + 2*MU)/3)
     stress_element=deviatoric_stress + k*trace_strain*Identity_matrixs
-    C_tangential=deviatoric_tangent_stiffness + k*(Identity_matrixs@np.transpose(Identity_matrixs))
+    C_tangential=deviatoric_tangent_stiffness + k*(Identity_matrixs @ np.transpose(Identity_matrixs))
     A=np.array([2,3,4])
-    stress_33[j][0]=stress_element[2][0]
+    stress_33[j][0]= stress_element[2][0] #lamda*(Strain_element[0][0]+Strain_element[1][0]) - 2*MU*plastic_strain[2][0]
     stress_element=np.delete(stress_element,A,axis=0)
     C_tangential=np.delete(C_tangential,A,axis=0)
     C_tangential=np.delete(C_tangential,A,axis=1)
@@ -80,7 +89,7 @@ def Material_routine(MU,lamda,u_element,B,h,B_ps,C_al,P,j,yield_stress,stress_33
 def Element_routine(Xe,Element_stiffness_matrixs,MU,lamda,u_element,F_int_Element,Le,thickness_plate,h,B_ps,C_al,P,yield_stress,stress_33): # Element routine
     #element routien will return the elements stiffness matrixs
     j=0
-    x_values=np.array([-0.57735,-0.57735,0.57735,-0.57735,0.57735,0.57735,-0.57735,0.57735])
+    x_values=np.array([-0.57735,-0.57735,0.57735,-0.57735,-0.57735,0.57735,0.57735,0.57735])
     Element_stiffness_matrixs=np.zeros((8,8))
     F_int_Element=np.zeros((8,1))
     #F_int_Element_1=np.zeros((8,1))
@@ -250,6 +259,9 @@ for time_step in range(1,11,1): # time step is split into 10 parts
         G=Global_F_internal-Global_F_external_reduced
         #print("G:",G)
         Reduced_Global_stiffness_matrix=Global_stiffness_matrixs
+        X=Global_stiffness_matrixs -np.transpose(Global_stiffness_matrixs)
+        print(X)
+        print(np.linalg.det(Global_stiffness_matrixs))
         Reduced_displacement=Global_displacement
         Reduced_G=G
         A=[]
