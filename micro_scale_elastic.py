@@ -289,19 +289,19 @@ while (np.linalg.norm(NR_delta_u,np.inf) > (0.005*np.linalg.norm(NR_U,np.inf))):
 		global_F_int_dd= global_F_int_dd + F_int_dd
 		print("----------------------------------------------------")
 		print("k_ii\n")
-		print(k_ii)
+		#print(k_ii)
 		global_k_ii= global_k_ii +k_ii
 		print("----------------------------------------------------")
 		print("k_id\n")
-		print(k_id)
+		#print(k_id)
 		global_k_id=global_k_id + k_id
 		print("----------------------------------------------------")
 		print("k_di\n")
-		print(k_di)
+		#print(k_di)
 		global_k_di=global_k_di + k_di
 		print("----------------------------------------------------")
 		print("k_dd\n")
-		print(k_dd)
+		#print(k_dd)
 		global_k_dd= global_k_dd + k_dd
 		print("----------------------------------------------------")
 		print("#########")
@@ -309,7 +309,9 @@ while (np.linalg.norm(NR_delta_u,np.inf) > (0.005*np.linalg.norm(NR_U,np.inf))):
 	#k_total_1=np.zeros((27,27))
 	#k_total_1= k_ii + (k_id @ A_matrix) + (np.transpose(A_matrix) @ k_di ) + (np.transpose(A_matrix) @ k_dd @ A_matrix)
 	k_total= global_k_ii + (global_k_id @ A_matrix) + (np.transpose(A_matrix) @ global_k_di ) + (np.transpose(A_matrix) @ global_k_dd @ A_matrix)
+	X=k_total - np.transpose(k_total) #### The error is in terms of 10**-9
 	#print(np.allclose(k_total,k_total_1))
+	print(np.linalg.det(k_total))
 	F_int_total= global_F_int_ii + np.transpose(A_matrix) @ global_F_int_dd
 	print("K_total:\n")
 	print(k_total)

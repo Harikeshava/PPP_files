@@ -28,10 +28,9 @@ def Material_routine(MU,lamda,u_element,B):
 
 def Element_routine(Xe,Element_stiffness_matrixs,MU,lamda,u_element,F_int_Element,Le,thickness_plate):
     #element routien will return the elements stiffness matrixs
-    x_values=np.array([-0.57735,-0.57735,0.57735,-0.57735,0.57735,0.57735,-0.57735,0.57735])
+    x_values=np.array([-0.57735,-0.57735,0.57735,-0.57735,-0.57735,0.57735,0.57735,0.57735])
     Element_stiffness_matrixs=np.zeros((8,8))
     F_int_Element=np.zeros((8,1))
-    F_int_Element_1=np.zeros((8,1))
     for i in range(0,8,2):
         x1=x_values[i]
         x2=x_values[i+1]
@@ -133,8 +132,8 @@ while(np.linalg.norm(R_delta_u,np.inf) > (0.005*np.linalg.norm(Global_displaceme
     print(Global_stiffness_matrixs)
     print("Internal_force:\n")
     print(Global_F_internal)
-    Global_F_external[2*total_nodes-1][0]=10
-    Global_F_external[2*total_nodes-2][0]=20
+    Global_F_external[2][0]=1000
+    Global_F_external[6][0]=1000
     G=Global_F_internal-Global_F_external
     print("G:",G)
     Reduced_Global_stiffness_matrix=Global_stiffness_matrixs
