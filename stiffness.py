@@ -1,5 +1,6 @@
 import numpy as np 
 import itertools as it
+import math as mi 
 
 def assemble_function(data,Assignment_matrixs,s,j):
     for name, age in data.items():    # for printing the value's key
@@ -18,7 +19,7 @@ def Material_routine(MU,lamda):
 def Element_routine(Xe,Element_stiffness_matrixs,MU,lamda):
     #element routien will return the elements stiffness matrixs
     x_values=np.array([-0.57735,-0.57735,0.57735,-0.57735,0.57735,0.57735,-0.57735,0.57735])
-    [C_tangential]=Material_routine(MU,lamda) # C_elastic or C_tangential will be decided w.r.t the condition satisfied
+     # C_elastic or C_tangential will be decided w.r.t the condition satisfied
     for i in range(0,8,2):
         x1=x_values[i]
         x2=x_values[i+1]
@@ -26,6 +27,7 @@ def Element_routine(Xe,Element_stiffness_matrixs,MU,lamda):
         Jacobin_matrixs = derivative_x @ Xe
         B_vector= np.linalg.inv(Jacobin_matrixs) @ derivative_x
         B=np.array([[B_vector[0][0],0,B_vector[0][1],0,B_vector[0][2],0,B_vector[0][3],0],[0,B_vector[1][0],0,B_vector[1][1],0,B_vector[1][2],0,B_vector[1][3]],[B_vector[1][0],B_vector[0][0],B_vector[1][1],B_vector[0][1],B_vector[1][2],B_vector[0][2],B_vector[1][3],B_vector[0][3]]])
+        [C_tangential]=Material_routine(MU,lamda)
         Element_stiffness_matrixs= Element_stiffness_matrixs + (np.transpose(B) @ C_tangential @ B)* np.linalg.det(Jacobin_matrixs)
     return [Element_stiffness_matrixs]
 
@@ -70,7 +72,8 @@ for i in range(0,M+1):
         Node_Numbering[i][j]=k 
         k=k+1
 print(Node_Numbering)
-
+d = np.sqrt((Le**2 + He**2))
+Global_displacement=np.array([[0],[0],[Le*(mi.cos(30)-1)],[Le*mi.sin(30)],[d*mi.cos(30+45)-Le],[d*mi.sin(30+45)-He],[He*mi.cos(30+90)],[He*(mi.sin(30+90)-1)]])
 for i in range(0,M):
     for j in range(0,N):
         Assignment_matrixs=np.zeros((8,2*total_nodes))
@@ -91,3 +94,5 @@ for i in range(0,M):
     Xe=Xe + y_disp       
 print('The obtained stiffness matrixa is:\n')
 print(Global_stiffness_matrixs)
+F=Global_stiffness_matrixs @ Global_displacement
+print(F)

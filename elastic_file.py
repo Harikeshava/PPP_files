@@ -1,5 +1,6 @@
 import numpy as np 
 import itertools as it
+import math as mi
 def u_arrangement(data,Global_displacement,s,u_element,t):
     for name, age in data.items():    # for printing the value's key
         if age == s:
@@ -41,7 +42,7 @@ def Element_routine(Xe,Element_stiffness_matrixs,MU,lamda,u_element,F_int_Elemen
         [C_tangential,stress_element]=Material_routine(MU,lamda,u_element,B) 
         Element_stiffness_matrixs= Element_stiffness_matrixs + (np.transpose(B) @ C_tangential @ B)* np.linalg.det(Jacobin_matrixs)*thickness_plate
         F_int_Element= F_int_Element + (np.transpose(B) @ stress_element ) * np.linalg.det(Jacobin_matrixs)*thickness_plate
-    F_int_Element_1= Element_stiffness_matrixs @ u_element
+    #F_int_Element_1= Element_stiffness_matrixs @ u_element
     #if(np.linalg.norm(F_int_Element)==np.linalg.norm(F_int_Element_1)):
         #print("yes")
     return [Element_stiffness_matrixs,F_int_Element]
@@ -97,6 +98,7 @@ for i in range(0,M+1):
         k=k+1
 print(Node_Numbering)
 count=0
+
 while(np.linalg.norm(R_delta_u,np.inf) > (0.005*np.linalg.norm(Global_displacement,np.inf))):
     count=count+1
     Global_stiffness_matrixs=np.zeros((2*total_nodes,2*total_nodes))
@@ -132,8 +134,8 @@ while(np.linalg.norm(R_delta_u,np.inf) > (0.005*np.linalg.norm(Global_displaceme
     print(Global_stiffness_matrixs)
     print("Internal_force:\n")
     print(Global_F_internal)
-    Global_F_external[2][0]=1000
-    Global_F_external[6][0]=1000
+    #Global_F_external[2][0]=1000
+    #Global_F_external[6][0]=1000
     G=Global_F_internal-Global_F_external
     print("G:",G)
     Reduced_Global_stiffness_matrix=Global_stiffness_matrixs
@@ -149,6 +151,7 @@ while(np.linalg.norm(R_delta_u,np.inf) > (0.005*np.linalg.norm(Global_displaceme
                 A.append(i+1)
     A=np.asarray(A)
     print(A)
+    A=np.delete(A,[2,3],axis=0)
     if(count==1):
         R_delta_u=np.delete(delta_u,A,axis=0)
     Reduced_Global_stiffness_matrix= np.delete(Reduced_Global_stiffness_matrix,A,axis=0)

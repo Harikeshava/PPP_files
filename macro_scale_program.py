@@ -1,5 +1,6 @@
 import numpy as np 
 import itertools as it
+
 def u_arrangement(data,Global_displacement,s,u_element,t): # The function for arranging  the displacement element accessed
     for n, a in data.items():    # for printing the value's key
         if a == s:
@@ -43,6 +44,7 @@ def Material_routine(MU,lamda,u_element,B,h,B_ps,C_al,P,j,yield_stress,stress_33
             s1=2
         s=s+(deviatoric_stress_trial[i][0]*deviatoric_stress_trial[i][0])*s1
     mag_deviatoric=(s)**(1/2)
+    print("Von Mises:",mag_deviatoric)
     if(mag_deviatoric > 0):
         Norm_vector=deviatoric_stress/mag_deviatoric
     drag_stress=h*alpha
@@ -71,15 +73,22 @@ def Material_routine(MU,lamda,u_element,B,h,B_ps,C_al,P,j,yield_stress,stress_33
         S3 = (3*MU/(3*MU + h))
         beta_1= 1-(S2*S3)
         beta_2= (1-S2)*S3
-        deviatoric_tangent_stiffness= (2*MU*beta_1*P_sym) - (2*MU*beta_2*Norm_vector @ np.transpose(Norm_vector))
-    k=((3*lamda + 2*MU)/3)
+        term_1=Norm_vector @ np.transpose(Norm_vector)
+        deviatoric_tangent_stiffness= (2*MU*beta_1*P_sym) - (2*MU*beta_2*term_1)
+    k= lamda + (2/3)*MU 
     stress_element=deviatoric_stress + k*trace_strain*Identity_matrixs
-    C_tangential=deviatoric_tangent_stiffness + k*(Identity_matrixs @ np.transpose(Identity_matrixs))
+    term = k * (Identity_matrixs @ np.transpose(Identity_matrixs))
+    C_tangential=deviatoric_tangent_stiffness + term
     A=np.array([2,3,4])
     stress_33[j][0]= stress_element[2][0] #lamda*(Strain_element[0][0]+Strain_element[1][0]) - 2*MU*plastic_strain[2][0]
     stress_element=np.delete(stress_element,A,axis=0)
+    print("Stress_element",stress_element)
     C_tangential=np.delete(C_tangential,A,axis=0)
     C_tangential=np.delete(C_tangential,A,axis=1)
+    C_tangential[0][2]=0
+    C_tangential[1][2]=0
+    C_tangential[2][0]=0
+    C_tangential[2][1]=0
     for i in range(3,5,1):
         plastic_strain[i][0]=0 # plain strain 
     B_ps[j]=np.transpose(plastic_strain)
@@ -117,21 +126,15 @@ def Element_routine(Xe,Element_stiffness_matrixs,MU,lamda,u_element,F_int_Elemen
 macro_length=100 * 10**-2 #(100cm)
 macro_height=50 * 10**-2  #(50cm)
 thickness_plate=1*10**-2  #(1cm)
-void_radius=2*10**-2      #(2cm)
-n=8 ### Number of point in the circumfrenece of the circle.
-### centre of the circle-(a,b)
-a=(macro_length/2)
-b=(macro_height/2)
 ### Material property variables
-Youngs_modulus=210E9 #N/meters
+Youngs_modulus= 70E9 #N/meters
 Poissons_ratio=0.30
 yield_stress=95E6
-h=500e6 #Hardening parameter
+h=200e6 #Hardening parameter
 MU=(Youngs_modulus/(2*(1+Poissons_ratio)))
 lamda=((Poissons_ratio*Youngs_modulus)/((1-2*Poissons_ratio)*(1+Poissons_ratio)))
 ### Local  variables for the incoming element for analysis
 u_element=np.zeros((8,1))
-Element_stiffness_matrix_macro=np.zeros((8,8))
 stress_33=np.zeros((4,1))
 plastic_strain=np.zeros((6,1))
 F_internal_Element=np.zeros((8,1)) #### Force _element_internal
@@ -154,9 +157,7 @@ Number_of_elements=N*M
 delta_u=np.zeros((2*total_nodes,1))
 Element_stiffness_matrixs=np.zeros((8,8))
 Global_F_external=np.zeros((2*total_nodes,1))
-Global_plastic_strain=np.zeros((3,M*N))
 Global_displacement=np.zeros((2*total_nodes,1))
-Global_plastic_strain=np.zeros((Number_of_elements,6))
 Gauss_point_plastic_strain=np.zeros((Number_of_elements,4,6))
 Gauss_point_alpha=np.zeros((Number_of_elements,4,1))
 Gauss_point_stress_33=np.zeros((Number_of_elements,4,1)) 

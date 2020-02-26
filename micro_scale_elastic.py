@@ -144,7 +144,7 @@ for i in range(0,8,2):
 ### The macro strain values are entered here... The coupling part takes place here
 NR_delta_u=np.ones((24,1))
 NR_U=np.zeros((24,1))
-Strain_macro=np.array([[0.2],[0.2],[0.4]])
+Strain_macro=np.array([[1.636*10**-6],[-8.151*10**-7],[-1.491*10**-7]])
 print("The macro strain is given as input now")
 for i in range(0,3,1):
 	u_independent[i+24][0]=Strain_macro[i][0]
@@ -312,6 +312,7 @@ while (np.linalg.norm(NR_delta_u,np.inf) > (0.005*np.linalg.norm(NR_U,np.inf))):
 	X=k_total - np.transpose(k_total) #### The error is in terms of 10**-9
 	#print(np.allclose(k_total,k_total_1))
 	print(np.linalg.det(k_total))
+	F= np.transpose(A_matrix) @ global_F_int_dd
 	F_int_total= global_F_int_ii + np.transpose(A_matrix) @ global_F_int_dd
 	print("K_total:\n")
 	print(k_total)
@@ -341,3 +342,11 @@ while (np.linalg.norm(NR_delta_u,np.inf) > (0.005*np.linalg.norm(NR_U,np.inf))):
 print("count:\n",count)
 print("u_independent\n",u_independent)
 print("u_dependent\n",u_dependent)
+volume= micro_length * micro_height * thickness_plate
+stress_element= (F[24:,0])/volume
+k_3_3=k_total[24:,24:] 
+k_3_24= k_total[24:,:24]
+k_inv= k_total[:24,:24]
+k_24_3= k_total[:24,24:]
+C_tangential= (k_3_3 - k_3_24 @ np.linalg.inv(k_inv) @ k_24_3)/volume 
+print(C_tangential)
