@@ -30,79 +30,80 @@ def Micro_Displacement_arrangement(u_element,sub_ii,sub_dd,u_independent,u_depen
 ### This function is for the calculation of the material model variables.
 def Micro_Material_routine(MU,lamda,stress_element,B,u_element,h,B_ps,C_al,P,j,yield_stress,stress_33):
 	#material routine will return the C_t matrixs,stress at gauss points and the internal state variables
-    Norm_vector=np.zeros((6,1))
-    P_sym=np.array([[(2/3),(-1/3),(-1/3),0,0,0],[(-1/3),(2/3),(-1/3),0,0,0],[(-1/3),(-1/3),(2/3),0,0,0],[0,0,0,1,0,0],[0,0,0,0,1,0],[0,0,0,0,0,1]])
-    Strain_element=np.zeros((3,1))
-    Strain_element= B @ u_element
-    for i in range(2,5,1):
-        Strain_element= np.insert(Strain_element,i,0,axis=0)
-    for i in range(3,6,1):
-       Strain_element[i][0]=(Strain_element[i][0])/2
-    print("Strain_element:\n",Strain_element)
-    trace_strain= Strain_element[0][0]+Strain_element[1][0]+Strain_element[2][0]
-    Identity_matrixs=np.array([[1],[1],[1],[0],[0],[0]])
-    deviatoric_strain= Strain_element - (trace_strain*Identity_matrixs)/3
-    plastic_strain=(B_ps[j].reshape(1,6))
-    #print(plastic_strain)
-    alpha=C_al[j][0]
-    deviatoric_stress = 2*MU*(deviatoric_strain-np.transpose(plastic_strain))
-    #deviatoric_stress[2][0]=-2*MU*plastic_strain[0][2] ### replacing the strain 33 component
-    deviatoric_stress_trial=deviatoric_stress
-    s=0
-    s1=1
-    for i in range(0,6,1):
-        if(i>2):
-            s1=2
-        s=s+(deviatoric_stress_trial[i][0]*deviatoric_stress_trial[i][0])*s1
-    mag_deviatoric=(s)**(1/2)
-    if(mag_deviatoric > 0):
-        Norm_vector=deviatoric_stress/mag_deviatoric
-    drag_stress=h*alpha
-    plastic_fn=mag_deviatoric-(2/3)**(1/2)*(yield_stress + drag_stress)
-    if(plastic_fn<10**-6):
-        print("Elastic calculation")
-        deviatoric_stress=deviatoric_stress_trial
-        deviatoric_tangent_stiffness= 2*MU*P_sym
-        plastic_strain=np.transpose(plastic_strain)
-        alpha=np.transpose(alpha)
-    else:
-        print("Plastic calculation")
-        plastic_corrector= ((plastic_fn)/(2*MU + (2*h)/3))
-        deviatoric_stress = deviatoric_stress_trial - 2*MU*Norm_vector*plastic_corrector
-        s=0
-        s1=1
-        for i in range(0,6,1):
-            if(i>2):
-                s1=2
-            s=s+(deviatoric_stress[i][0]*deviatoric_stress[i][0])*s1
-        mag_deviatoric_1=(s)**(1/2)
-        plastic_strain= np.transpose(plastic_strain) + plastic_corrector*Norm_vector
-        #plastic_strain[2][0]=-(plastic_strain[0][0]+plastic_strain[1][0])
-        alpha = np.transpose(alpha) + (2/3)**(1/2)*(plastic_corrector)
-        S2 = (plastic_fn/mag_deviatoric)
-        S3 = (3*MU/(3*MU + h))
-        beta_1= 1-(S2*S3)
-        beta_2= (1-S2)*S3
-        term_1=Norm_vector @ np.transpose(Norm_vector)
-        deviatoric_tangent_stiffness= (2*MU*beta_1*P_sym) - (2*MU*beta_2*term_1)
-    k= lamda + (2/3)*MU 
-    stress_element=deviatoric_stress + k*trace_strain*Identity_matrixs
-    term = k * (Identity_matrixs @ np.transpose(Identity_matrixs))
-    C_tangential=deviatoric_tangent_stiffness + term
-    A=np.array([2,3,4])
-    stress_33[j][0]= stress_element[2][0] #lamda*(Strain_element[0][0]+Strain_element[1][0]) - 2*MU*plastic_strain[2][0]
-    stress_element=np.delete(stress_element,A,axis=0)
-    C_tangential=np.delete(C_tangential,A,axis=0)
-    C_tangential=np.delete(C_tangential,A,axis=1)
-    C_tangential[0][2]=0
-    C_tangential[1][2]=0
-    C_tangential[2][0]=0
-    C_tangential[2][1]=0
-    for i in range(3,5,1):
-        plastic_strain[i][0]=0 # plain strain 
-    B_ps[j]=np.transpose(plastic_strain)
-    C_al[j][0]=np.transpose(alpha)
-    return [C_tangential,stress_element,B_ps,C_al]
+	Norm_vector=np.zeros((6,1))
+	P_sym=np.array([[(2/3),(-1/3),(-1/3),0,0,0],[(-1/3),(2/3),(-1/3),0,0,0],[(-1/3),(-1/3),(2/3),0,0,0],[0,0,0,1,0,0],[0,0,0,0,1,0],[0,0,0,0,0,1]])
+	Strain_element=np.zeros((3,1))
+	Strain_element= B @ u_element
+	for i in range(2,5,1):
+	    Strain_element= np.insert(Strain_element,i,0,axis=0)
+	for i in range(3,6,1):
+	   Strain_element[i][0]=(Strain_element[i][0])/2
+	print("Strain_element:\n",Strain_element)
+	trace_strain= Strain_element[0][0]+Strain_element[1][0]+Strain_element[2][0]
+	Identity_matrixs=np.array([[1],[1],[1],[0],[0],[0]])
+	deviatoric_strain= Strain_element - (trace_strain*Identity_matrixs)/3
+	plastic_strain=(B_ps[j].reshape(1,6))
+	#print(plastic_strain)
+	alpha=C_al[j][0]
+	deviatoric_stress = 2*MU*(deviatoric_strain-np.transpose(plastic_strain))
+	#deviatoric_stress[2][0]=-2*MU*plastic_strain[0][2] ### replacing the strain 33 component
+	deviatoric_stress_trial=deviatoric_stress
+	s=0
+	s1=1
+	for i in range(0,6,1):
+	    if(i>2):
+	        s1=2
+	    s=s+(deviatoric_stress_trial[i][0]*deviatoric_stress_trial[i][0])*s1
+	mag_deviatoric=(s)**(1/2)
+	if(mag_deviatoric > 0):
+	    Norm_vector=deviatoric_stress/mag_deviatoric
+	drag_stress=h*alpha
+	plastic_fn=mag_deviatoric-(2/3)**(1/2)*(yield_stress + drag_stress)
+	if(plastic_fn<10**-6):
+	    print("Elastic calculation")
+	    deviatoric_stress=deviatoric_stress_trial
+	    deviatoric_tangent_stiffness= 2*MU*P_sym
+	    plastic_strain=np.transpose(plastic_strain)
+	    alpha=np.transpose(alpha)
+	else:
+		print("Plastic calculation")
+		plastic_corrector= ((plastic_fn)/(2*MU + (2*h)/3))
+		deviatoric_stress = deviatoric_stress_trial - 2*MU*Norm_vector*plastic_corrector
+		s=0
+		s1=1
+		for i in range(0,6,1):
+		    if(i>2):
+		        s1=2
+		    s=s+(deviatoric_stress[i][0]*deviatoric_stress[i][0])*s1
+		mag_deviatoric_1=(s)**(1/2)
+		plastic_strain= np.transpose(plastic_strain) + plastic_corrector*Norm_vector
+		#plastic_strain[2][0]=-(plastic_strain[0][0]+plastic_strain[1][0])
+		alpha = np.transpose(alpha) + (2/3)**(1/2)*(plastic_corrector)
+		S2 = (plastic_fn/mag_deviatoric)
+		S3 = (3*MU/(3*MU + h))
+		beta_1= 1-(S2*S3)
+		beta_2= (1-S2)*S3
+		term_1=Norm_vector @ np.transpose(Norm_vector)
+		deviatoric_tangent_stiffness= (2*MU*beta_1*P_sym) - (2*MU*beta_2*term_1)
+	k= lamda + (2/3)*MU 
+	stress_element=deviatoric_stress + k*trace_strain*Identity_matrixs
+	term = k * (Identity_matrixs @ np.transpose(Identity_matrixs))
+	C_tangential=deviatoric_tangent_stiffness + term
+	A=np.array([2,3,4])
+	stress_33[j][0]= stress_element[2][0] #lamda*(Strain_element[0][0]+Strain_element[1][0]) - 2*MU*plastic_strain[2][0]
+	stress_element=np.delete(stress_element,A,axis=0)
+	C_tangential=np.delete(C_tangential,A,axis=0)
+	C_tangential=np.delete(C_tangential,A,axis=1)
+	C_tangential[0][2]=0
+	C_tangential[1][2]=0 
+	C_tangential[2][0]=0
+	C_tangential[2][1]=0
+	C_tangential[2][2]= (C_tangential[2][2]/2)
+	for i in range(3,5,1):
+	    plastic_strain[i][0]=0 # plain strain 
+	B_ps[j]=np.transpose(plastic_strain)
+	C_al[j][0]=np.transpose(alpha)
+	return [C_tangential,stress_element,B_ps,C_al]
 ###The function for the calculation of the element's variable.
 def Micro_Element_routine(x_element,Element_stiffness_micro,F_int_Element,stress_element,u_element,MU,lamda,h,B_ps,C_al,P,yield_stress,stress_33,thickness_plate):
 	j=0
@@ -127,13 +128,15 @@ def Micro_Element_routine(x_element,Element_stiffness_micro,F_int_Element,stress
 ### Geomentrical variables
 micro_length=10*10**-6
 micro_height=10*10**-6
-thickness_plate=1*10**-6
+thickness_plate=500*10**-2
 void_radius=2*10**-6
 ### Material Properties ###
-Youngs_modulus=210E9 #N/meters
+Youngs_modulus=70E9 #N/meters
 Poissons_ratio=0.30
 yield_stress=95E6
-h=500e6 #Hardening parameter
+h=200e6 #Hardening parameter
+Strain_macro=np.array([[5.16754*10**-7],[-1.0335*10**-7],[-4.268*10**-7]])
+###########################################################################################
 MU=(Youngs_modulus/(2*(1+Poissons_ratio)))
 lamda=((Poissons_ratio*Youngs_modulus)/((1-2*Poissons_ratio)*(1+Poissons_ratio)))
 ### centre of the void in the RVE assumed -(a,b)
@@ -222,7 +225,6 @@ for i in range(0,8,2):
 NR_delta_u=np.ones((24,1))
 NR_U=np.zeros((24,1))
 ### Strain input
-Strain_macro=np.array([[4.896*10**-4],[-2.3967*10**-4],[-2.193*10**-5]])
 print("The macro strain is given as input now")
 for i in range(0,3,1):
 	u_independent[i+24][0]=Strain_macro[i][0]
@@ -435,5 +437,6 @@ k_3_24= k_total[24:,:24]
 k_inv= k_total[:24,:24]
 k_24_3= k_total[:24,24:]
 term=k_3_24 @ np.linalg.inv(k_inv) @ k_24_3
-C_tangential= (k_3_3 - term)/volume 
+t_1= (k_3_3 /volume )
+C_tangential= t_1 - ((term)/volume)
 print(C_tangential)

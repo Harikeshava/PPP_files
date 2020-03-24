@@ -50,8 +50,8 @@ def Element_routine(Xe,Element_stiffness_matrixs,MU,lamda,u_element,F_int_Elemen
 #Elastic program for 2D Bilinear Element 
 #Here, we are considering a point load as for building the basic strucutre for the required element
 #internal parameters
-yield_stress=70*10**-6
-Youngs_modulus=210E9 #N/meters
+yield_stress=95E6
+Youngs_modulus=70E9 #N/meters
 Poissons_ratio=0.30
 MU=(Youngs_modulus/(2*(1+Poissons_ratio)))
 lamda=((Poissons_ratio*Youngs_modulus)/((1-2*Poissons_ratio)*(1+Poissons_ratio)))
@@ -76,7 +76,8 @@ F_int_Element=np.zeros((8,1))
 #print("Enter the forces value in newton for each node of interest\n")
 #print("Enter zero if no forces is applied on the node\n")
 # The force part to be made into incremental wise after figuring the flow of the program
-Xe=np.array([[0,0],[Le,0],[0,He],[Le,He]])
+tension_disp=np.array([[0,0],[-2.110*10**-7,-6.588*10**-7],[0,0],[1.85*10**-7,-6.28*10**-7]])
+Xe=np.array([[0,0],[Le,0],[0,He],[Le,He]]) #+ tension_disp
 x_disp=np.array([[Le,0],[Le,0],[Le,0],[Le,0]])
 y_disp=np.array([[0,He],[0,He],[0,He],[0,He]])
 Node_Numbering= np.zeros(((M+1),(N+1)))
@@ -98,7 +99,10 @@ for i in range(0,M+1):
         k=k+1
 print(Node_Numbering)
 count=0
-
+Global_displacement[2][0]= 4.909*10**-7 
+Global_displacement[3][0]= 7.748*10**-8
+Global_displacement[4][0]= -4.909*10**-7
+Global_displacement[5][0]= -7.748*10**-8
 while(np.linalg.norm(R_delta_u,np.inf) > (0.005*np.linalg.norm(Global_displacement,np.inf))):
     count=count+1
     Global_stiffness_matrixs=np.zeros((2*total_nodes,2*total_nodes))
@@ -134,8 +138,8 @@ while(np.linalg.norm(R_delta_u,np.inf) > (0.005*np.linalg.norm(Global_displaceme
     print(Global_stiffness_matrixs)
     print("Internal_force:\n")
     print(Global_F_internal)
-    Global_F_external[3][0]=-100
-    #Global_F_external[6][0]=-100
+    #Global_F_external[2][0]=100
+    #Global_F_external[6][0]=100
     G=Global_F_internal-Global_F_external
     print("G:",G)
     Reduced_Global_stiffness_matrix=Global_stiffness_matrixs
@@ -151,7 +155,7 @@ while(np.linalg.norm(R_delta_u,np.inf) > (0.005*np.linalg.norm(Global_displaceme
                 A.append(i+1)
     A=np.asarray(A)
     print(A)
-    #A=np.delete(A,[2,3],axis=0)
+    A=np.array([[2],[3],[4],[5]])
     if(count==1):
         R_delta_u=np.delete(delta_u,A,axis=0)
     Reduced_Global_stiffness_matrix= np.delete(Reduced_Global_stiffness_matrix,A,axis=0)

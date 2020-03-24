@@ -1,6 +1,7 @@
 import numpy as np 
 import itertools as it
-
+import matplotlib.pyplot as plt
+from  matplotlib import cm
 def u_arrangement(data,Global_displacement,s,u_element,t): # The function for arranging  the displacement element accessed
     for n, a in data.items():    # for printing the value's key
         if a == s:
@@ -89,6 +90,7 @@ def Material_routine(MU,lamda,u_element,B,h,B_ps,C_al,P,j,yield_stress,stress_33
     C_tangential[1][2]=0
     C_tangential[2][0]=0
     C_tangential[2][1]=0
+    C_tangential[2][2]= (C_tangential[2][2]/2)
     for i in range(3,5,1):
         plastic_strain[i][0]=0 # plain strain 
     B_ps[j]=np.transpose(plastic_strain)
@@ -122,15 +124,20 @@ def Element_routine(Xe,Element_stiffness_matrixs,MU,lamda,u_element,F_int_Elemen
 #Here, we are considering a point load as for building the basic strucutre for the required element
 ############################ Input parameter #################################
 ### units as of now in Meters ###
+### The variables that can me changed for analysis ###
 ### Geomentrical variables
 macro_length=100 * 10**-2 #(100cm)
 macro_height=50 * 10**-2  #(50cm)
-thickness_plate=1*10**-2  #(1cm)
+thickness_plate=500*10**-2  #(500cm)
 ### Material property variables
 Youngs_modulus= 70E9 #N/meters
 Poissons_ratio=0.30
 yield_stress=95E6
 h=200e6 #Hardening parameter
+force_mag = 300*10**5 # N/m^2 # forces distributions magnitude
+N=1 #eval(input('number of elements in the x-direction\n')) # No of columns
+M=1 #eval(input('number of elements in the y-direction\n')) # No of rows
+###############################################################################
 MU=(Youngs_modulus/(2*(1+Poissons_ratio)))
 lamda=((Poissons_ratio*Youngs_modulus)/((1-2*Poissons_ratio)*(1+Poissons_ratio)))
 ### Local  variables for the incoming element for analysis
@@ -142,11 +149,9 @@ F_internal_Element=np.zeros((8,1)) #### Force _element_internal
 ### The pre-processing the stage where, the constructed model is divided into a N number of discrete subregions or element. The elements are connected at the
 ### intersection points called as nodes. The subregions in our analysis represents a geomentry of quadrilateral in shape, these subregions are also called as 
 ### meshes. Now, this developed system's data are used for the  FEM analysis, as an input parameter.
-L= eval(input('Enter the length of the plat in meters\n'))
-height_plate = eval(input('Enter the height of the plat in meters\n'))
-thickness_plate = eval(input("Enter the thickness of the plate meters\n"))
-N=eval(input('Enter the number of elements in the x-direction\n')) # No of columns
-M=eval(input('Enter the number of elements in the y-direction\n')) # No of rows
+L= macro_length #eval(input('Enter the length of the plat in meters\n'))
+height_plate = macro_height #eval(input('Enter the height of the plat in meters\n'))
+thickness_plate = thickness_plate #eval(input("Enter the thickness of the plate meters\n"))
 ### Elements and node variables
 Le=L/N #element length
 He=height_plate/M #element height
@@ -165,13 +170,25 @@ stress_33=np.zeros((4,1))
 plastic_strain=np.zeros((6,1))
 u_element=np.zeros((8,1))
 F_int_Element=np.zeros((8,1))
-print("Enter the forces value in newton for each node of interest\n")
-print("Enter zero if no forces is applied on the node\n")
-for i in range(0,len(Global_F_external),1): # Point Load of interest
-    Global_F_external[i]=eval(input(" "))
+## The forces initialization ## ### For running the program for test cases the below 2 lines should be commented 
+Global_F_external[2][0]= force_mag
+Global_F_external[6][0]= force_mag
+#### Meshing variables ####
 Xe=np.array([[0,0],[Le,0],[0,He],[Le,He]])
 x_disp=np.array([[Le,0],[Le,0],[Le,0],[Le,0]])
 y_disp=np.array([[0,He],[0,He],[0,He],[0,He]])
+############################
+######## Testing Parameters ######
+#For verifying the test cases, follow the instructions in the manual section (to run the program for the test cases)
+#tension_disp=np.array([[0,0],[5.55*10**-9,1.88*10**-10],[0,0],[-6.33*10**-9,1.97*10**-10]])
+#Xe=np.array([[0,0],[Le,0],[0,He],[Le,He]]) #+ tension_disp
+#Global_displacement[2][0]= 4.909*10**-7 
+#Global_displacement[3][0]= 7.748*10**-8
+#Global_displacement[4][0]= -4.909*10**-7
+#Global_displacement[5][0]= -7.748*10**-8
+#### Boundary condition ####
+#A=np.array([[2],[3],[4],[5]]) The variable A array should be uncommented in the line 293 of the program line below, where the array A holds the boundary condiitons
+#############################
 Node_Numbering= np.zeros(((M+1),(N+1)))
 #temporary variables for calculations
 s=0
@@ -207,11 +224,12 @@ print(Node_Numbering)
 ### 4.Element_routine : This function is used to compute the stiffness matrixs and the internal forces acting on the element. This function is called for each element
 ### which is coming in for the analysis. The material routine is called in this function for the calculation purpose, for obtaining the material tangent stiffness 
 ### matrixs and elements stress update(for the calculation of the F_e_interanl).
-
+x=[]
+y=[]
 for time_step in range(1,11,1): # time step is split into 10 parts
     R_delta_u=np.ones((2*total_nodes,1))
-    Global_displacement=np.zeros((2*total_nodes,1))
-    Global_F_external_reduced=(Global_F_external*time_step)/10
+    Global_displacement=np.zeros((2*total_nodes,1)) ## comment this line for making it displacement driven
+    Global_F_external_reduced=(thickness_plate*Global_F_external*time_step)/10
     count=0
     while(np.linalg.norm(R_delta_u,np.inf) > (0.005*np.linalg.norm(Global_displacement,np.inf))):
         count=count+1
@@ -255,17 +273,16 @@ for time_step in range(1,11,1): # time step is split into 10 parts
                 Xe=Xe + y_disp       
         #print('The obtained stiffness matrixa is:\n')
         #print(Global_stiffness_matrixs)
-        #print("Internal_force:\n")
-        #print(Global_F_internal)
+        print("Internal_force:\n")
+        print(Global_F_internal)
         G=Global_F_internal-Global_F_external_reduced
         #print("G:",G)
         Reduced_Global_stiffness_matrix=Global_stiffness_matrixs
         X=Global_stiffness_matrixs -np.transpose(Global_stiffness_matrixs)
         print(X)
-        print(np.linalg.det(Global_stiffness_matrixs))
         Reduced_displacement=Global_displacement
         Reduced_G=G
-        A=[]
+        A=[] #### Boundary condition ####
         #Reduction of matirxs sizes
         for j in range(0,M+1,1):    
             for n, a in data.items():    # for printing the value's key
@@ -273,8 +290,10 @@ for time_step in range(1,11,1): # time step is split into 10 parts
                     i=n
                     A.append(i)
                     A.append(i+1)
-        A=np.asarray(A)
+        A=np.asarray(A) #### Boundary condition ####
         #print(A)
+        #### The below A array values should be used for the test cases
+        #A=np.array([[2],[3],[4],[5]])
         if(count==1):
             R_delta_u=np.delete(delta_u,A,axis=0)
         Reduced_Global_stiffness_matrix= np.delete(Reduced_Global_stiffness_matrix,A,axis=0)
@@ -297,3 +316,135 @@ for time_step in range(1,11,1): # time step is split into 10 parts
         Global_displacement=(Reduced_displacement.reshape(2*total_nodes,1))
     print("displacement:\n",Global_displacement)
     print("Iteration number:",count)
+
+x=[]
+y=[]
+for i in range(0,len(Global_displacement),1):
+    if(i%2==0):
+        x.append(Global_displacement[i][0])
+    else:
+        y.append(Global_displacement[i][0])
+print(x,y)
+Final_displacment = np.append(np.vstack(x),np.vstack(y),axis=1)
+Final_position= Xe + Final_displacment
+plt.scatter(Xe[:,0]*10**10,Xe[:,1]*10**10)
+plt.scatter((Final_position[:,0]*10**10),(Final_position[:,1]*10**10))
+plt.xlabel("x(m)")
+plt.ylabel("y(m)")
+plt.title("Final positions of the node")
+plt.show()
+
+print("The virtual work of the system with irregular meshing is:\n")
+print( (Global_stiffness_matrixs@ Global_displacement) - Global_F_external)
+#### Post-processing ####
+Element_x=np.linspace(0,macro_length,50)
+Element_y=np.linspace(0,macro_height,50)
+U_x=np.zeros((len(Element_x),len(Element_y)))
+U_y=np.zeros((len(Element_x),len(Element_y)))
+Aera= macro_length * macro_height
+xx , yy = np.meshgrid(Element_x,Element_y)
+# interpolation of the displacements using the obtained final displacement from the analysis
+for i in range(0,len(xx),1):
+    for j in range(0,len(yy),1):
+        N_1=  ((xx[i][j]-macro_length)*(yy[i][j]-macro_height))*(1/Aera)
+        N_2=  - ((xx[i][j])*(yy[i][j]-macro_height))*(1/Aera)
+        N_3=  - ((xx[i][j]-macro_length)*(yy[i][j]))*(1/Aera)
+        N_4=  ((xx[i][j])*(yy[i][j]))*(1/Aera)
+        U_x[i][j]= N_1*x[0] + N_2 * x[1] + N_3 * x[2] + N_4 * x[3]
+        U_y[i][j]= N_1 * y[0] + N_2 * y[1] + N_3 * y[2] + N_4 * y[3]
+print(U_x)
+print(U_y)
+# The displacement plots along x and y direction
+fig, ax = plt.subplots()
+cmap = plt.contourf(xx, yy, U_x)
+lx = plt.xlabel("x(m)")
+ly = plt.ylabel("y(m)")
+plt.title("Displacement of the nodes along x-direction")
+fig.colorbar(cmap)
+plt.show(fig)
+fig, ax = plt.subplots()
+cmap = plt.contourf(xx, yy, U_y)
+lx = plt.xlabel("x (m)")
+ly = plt.ylabel("y (m)")
+plt.title("Displacement of the nodes along y-direction")
+fig.colorbar(cmap)
+plt.show(fig)
+# The stress interpolations
+strain_x=np.zeros((len(Element_x),len(Element_y)))
+strain_y=np.zeros((len(Element_x),len(Element_y)))
+strain_xy=np.zeros((len(Element_x),len(Element_y)))
+stress_x=np.zeros((len(Element_x),len(Element_y)))
+stress_y=np.zeros((len(Element_x),len(Element_y)))
+stress_xy=np.zeros((len(Element_x),len(Element_y)))
+stress_vector=np.zeros((3,1))
+C_tangential=np.array([[2*MU+lamda,lamda,0],[lamda,2*MU+lamda,0],[0,0,MU]])
+for i in range(0,len(xx),1):
+    for j in range(0,len(yy),1):
+        # Partial derivative w.r.t x
+        N_1_x=  ((yy[i][j]-macro_height))*(1/Aera)
+        N_2_x=  - ((yy[i][j]-macro_height))*(1/Aera)
+        N_3_x=  - ((yy[i][j]))*(1/Aera)
+        N_4_x=  ((yy[i][j]))*(1/Aera)
+        # Partial derivative w.r.t y
+        N_1_y=  ((xx[i][j]-macro_length))*(1/Aera)
+        N_2_y=  - ((xx[i][j]))*(1/Aera)
+        N_3_y=  - ((xx[i][j]-macro_length))*(1/Aera)
+        N_4_y=  ((xx[i][j]))*(1/Aera)
+        strain_x[i][j]= N_1_x*x[0] + N_2_x * x[1] + N_3_x * x[2] + N_4_x * x[3]
+        strain_y[i][j]= N_1_y * y[0] + N_2_y * y[1] + N_3_y * y[2] + N_4_y * y[3]
+        strain_xy[i][j]= N_1_x*y[0] + N_2_x * y[1] + N_3_x * y[2] + N_4_x * y[3] + N_1_y * x[0] + N_2_y * x[1] + N_3_y * x[2] + N_4_y * x[3]
+        strain=np.array([[strain_x[i][j]],[strain_y[i][j]],[strain_xy[i][j]]])
+        stress_vector = C_tangential @ strain
+        stress_x[i][j]= stress_vector[0][0]
+        stress_y[i][j]= stress_vector[1][0]
+        stress_xy[i][j]= stress_vector[2][0]
+
+print(strain_x)
+fig, ax = plt.subplots()
+cmap = ax.contourf(xx, yy, strain_x)
+lx = plt.xlabel("x (m)")
+ly = plt.ylabel("y (m)")
+plt.title("strain xx")
+plt.colorbar(cmap)
+plt.show(fig)
+
+fig, ax = plt.subplots()
+cmap = plt.contourf(xx, yy, strain_y)
+lx = plt.xlabel("x (m)")
+ly = plt.ylabel("y (m)")
+plt.title("strain yy")
+fig.colorbar(cmap)
+plt.show(fig)
+
+fig, ax = plt.subplots()
+cmap = plt.contourf(xx, yy, strain_xy)
+lx = plt.xlabel("x (m)")
+ly = plt.ylabel("y (m)")
+plt.title("strain xy")
+fig.colorbar(cmap)
+plt.show(fig)
+
+## stress
+fig, ax = plt.subplots()
+cmap = plt.contourf(xx, yy, stress_x)
+lx = plt.xlabel("x (m)")
+ly = plt.ylabel("y (m)")
+plt.title("stress xx (N/m^2)")
+fig.colorbar(cmap)
+plt.show(fig)
+
+fig, ax = plt.subplots()
+cmap = plt.contourf(xx, yy, stress_y)
+lx = plt.xlabel("x (m)")
+ly = plt.ylabel("y (m)")
+plt.title("stress yy (N/m^2)")
+fig.colorbar(cmap)
+plt.show(fig)
+
+fig, ax = plt.subplots()
+cmap = plt.contourf(xx, yy, stress_xy)
+lx = plt.xlabel("x (m)")
+ly = plt.ylabel("y (m)")
+plt.title("stress xy (N/m^2)")
+fig.colorbar(cmap)
+plt.show(fig)
