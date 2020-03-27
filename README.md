@@ -3,7 +3,7 @@ The file contains information about the test cases used for the validation of th
 The procedure to run the test case is mentioned in the user manual under the "Procedure to run the test cases" subsection.
 # Test cases
 ## Rigid body Rotation:
-Aim: The rigid rotation is a test done to verify that our system does not strain for a normal coordinate transformation.
+Aim: The rigid rotation is a test done to verify that our system does not strain for a normal coordinate transformation.\\
 Expected results:The system should be in equilibrium,$\sum_{i=1}^{N} F_{i}^{x}=0 and \sum_{i=1}^{N} F_{i}^{y}=0$
 Obtained results: The obtained internal force matric is mentioned in figure-4.3.
 Parameters used: The parameters used are mentioned below with the datas
