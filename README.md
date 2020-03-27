@@ -1,11 +1,10 @@
 # Introduction:
-$\sum$
 The file contains information about the test cases used for the validation of the developed program.
 The procedure to run the test case is mentioned in the user manual under the "Procedure to run the test cases" subsection.
 # Test cases
 ## Rigid body Rotation:
 Aim: The rigid rotation is a test done to verify that our system does not strain for a normal coordinate transformation.<br/>
-Expected results:The system should be in equilibrium,$\sum_{i=1}^{N} F_{i}^{x}=0 and \sum_{i=1}^{N} F_{i}^{y}=0$<br/>
+Expected results:The system should be in equilibrium,that is the forces in x and y direction should be equale to zero as mented in the report.<br/>
 Obtained results: The obtained internal force matric is mentioned in figure-4.3.<br/>
 Parameters used: The parameters used are mentioned below with the datas<br/>
 Xe=np.array([[0,0],[Le,0],[0,He],[Le,He]]) --- The tension parameter is commented for this test case.<br/>
