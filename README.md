@@ -6,7 +6,7 @@ The procedure to run the test case is mentioned in the user manual under the "Pr
 Aim: The rigid rotation is a test done to verify that our system does not strain for a normal coordinate transformation.<br/>
 Expected results:The system should be in equilibrium,that is the forces in x and y direction should be equale to zero as mented in the report.<br/>
 Obtained results: The obtained internal force matric is mentioned in figure-4.3.<br/>
-Parameters used: The parameters used are mentioned below with the datas<br/>
+Parameters used: The parameters used are mentioned below with the datas,The parameters He and Le are calculated using the input parameters in the code.<br/>
 Xe=np.array([[0,0],[Le,0],[0,He],[Le,He]]) --- The tension parameter is commented for this test case.<br/>
 Global_displacement[2][0]= 4.909*10^-7 <br/>
 Global_displacement[3][0]= 7.748*10^-8 <br/>
