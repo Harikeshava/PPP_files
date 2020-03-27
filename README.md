@@ -1,4 +1,4 @@
-# Introduction:
+# Introduction
 The file contains information about the test cases used for the validation of the developed program.
 The procedure to run the test case is mentioned in the user manual under the "Procedure to run the test cases" subsection.
 # Test cases
