@@ -18,7 +18,7 @@ Expected results: the F<sub>int</sub>(U<sub>rig</sub>)=F<sub>int</sub>(U<sub>rig
 Obtained results: The obtained internal force matric is mentioned in figure- 4.4 and 4.5. <br/>
 Parameters used: <br/>
 tension_disp=np.array([[0,0],[4.909×10^-9,7.751×10^-10],[0,0],[4.909×10^-9,-7.751×10^-10]]) <br/>
-Xe=np.array([[0,0],[Le,0],[0,He],[Le,He]]) + tension_disp
+Xe=np.array([[0,0],[Le,0],[0,He],[Le,He]]) + tension_disp <br/>
 Global_displacement[2][0]= 4.909×10^-7 <br/>
 Global_displacement[3][0]= 7.748×10^-8 <br/>
 Global_displacement[4][0]= -4.909×10^-7 <br/>
