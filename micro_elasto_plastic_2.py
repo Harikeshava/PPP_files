@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 ### The code is for the micro-scale FEM analysis
 ### The basic theory of the FEM analysis of the micro-scale is that, as we have assumed periodic boundary condition- me have paired the
 ### boundary nodes. This leads to the concept of independent and dependent nodes wrt strain. The system as a whole has macro strain as 
-### the external parameter.For the known displacement of the dependent node, we fidn the displacement of the independent nodes wrt strain.
+### the external parameter.For the known displacement of the dependent node, we find the displacement of the independent nodes wrt strain.
 
 ### The RVE Element is considered with a plate with a hole in the centre
 ### The micro scale is called at each gauss point of the macro element assumed 

@@ -28,7 +28,7 @@ def Material_routine(MU,lamda,u_element,B,h,B_ps,C_al,P,j,yield_stress,stress_33
         Strain_element= np.insert(Strain_element,i,0,axis=0)
     for i in range(3,6,1):
        Strain_element[i][0]=(Strain_element[i][0])/2
-    print("Strain_element:\n",Strain_element)
+    #print("Strain_element:\n",Strain_element)
     trace_strain= Strain_element[0][0]+Strain_element[1][0]+Strain_element[2][0]
     Identity_matrixs=np.array([[1],[1],[1],[0],[0],[0]])
     deviatoric_strain= Strain_element - (trace_strain*Identity_matrixs)/3
@@ -83,7 +83,7 @@ def Material_routine(MU,lamda,u_element,B,h,B_ps,C_al,P,j,yield_stress,stress_33
     A=np.array([2,3,4])
     stress_33[j][0]= stress_element[2][0] #lamda*(Strain_element[0][0]+Strain_element[1][0]) - 2*MU*plastic_strain[2][0]
     stress_element=np.delete(stress_element,A,axis=0)
-    print("Stress_element",stress_element)
+    #print("Stress_element",stress_element)
     C_tangential=np.delete(C_tangential,A,axis=0)
     C_tangential=np.delete(C_tangential,A,axis=1)
     C_tangential[0][2]=0
@@ -103,6 +103,8 @@ def Element_routine(Xe,Element_stiffness_matrixs,MU,lamda,u_element,F_int_Elemen
     x_values=np.array([-0.57735,-0.57735,0.57735,-0.57735,-0.57735,0.57735,0.57735,0.57735])
     Element_stiffness_matrixs=np.zeros((8,8))
     F_int_Element=np.zeros((8,1))
+    stress_step=0
+    strain_step=0
     #F_int_Element_1=np.zeros((8,1))
     for i in range(0,8,2):
         x1=x_values[i]
@@ -134,7 +136,7 @@ Youngs_modulus= 70E9 #N/meters
 Poissons_ratio=0.30
 yield_stress=95E6
 h=200e6 #Hardening parameter
-force_mag = 300*10**5 # N/m^2 # forces distributions magnitude
+force_mag = 100 # N/m^2 # forces distributions magnitude
 N=1 #eval(input('number of elements in the x-direction\n')) # No of columns
 M=1 #eval(input('number of elements in the y-direction\n')) # No of rows
 ###############################################################################
@@ -170,9 +172,6 @@ stress_33=np.zeros((4,1))
 plastic_strain=np.zeros((6,1))
 u_element=np.zeros((8,1))
 F_int_Element=np.zeros((8,1))
-## The forces initialization ## ### For running the program for test cases the below 2 lines should be commented 
-Global_F_external[2][0]= force_mag
-Global_F_external[6][0]= force_mag
 #### Meshing variables ####
 Xe=np.array([[0,0],[Le,0],[0,He],[Le,He]])
 x_disp=np.array([[Le,0],[Le,0],[Le,0],[Le,0]])
@@ -207,6 +206,15 @@ for i in range(0,M+1): # for segregating the element nodes as a group using a sq
         Node_Numbering[i][j]=k 
         k=k+1
 print(Node_Numbering)
+## The forces initialization ## ### For running the program for test cases the below 2 lines should be commented 
+#Global_F_external[2][0]= force_mag
+#Global_F_external[6][0]= force_mag
+for j in range(0,M+1,1):    
+    for n, a in data.items():    # for printing the value's key
+        if a == Node_Numbering[j][N]:
+            i=n
+            Global_F_external[i][0]= force_mag
+                    
 ######## Analysis ########
 ### The data-set obtained from the part of pre-processing is used as the input for our FEM analysis. The code below will solve the system of equation to find the 
 ### unknowns,that is the external parameters. The system has 3 main variables the Total stiffness matrixs, total displacement matrix(the unknowns) and the known 
@@ -226,10 +234,11 @@ print(Node_Numbering)
 ### matrixs and elements stress update(for the calculation of the F_e_interanl).
 x=[]
 y=[]
-for time_step in range(1,11,1): # time step is split into 10 parts
+for time_step in range(5,105,5): # time step-5% increment
     R_delta_u=np.ones((2*total_nodes,1))
     Global_displacement=np.zeros((2*total_nodes,1)) ## comment this line for making it displacement driven
-    Global_F_external_reduced=(thickness_plate*Global_F_external*time_step)/10
+    Global_F_external_reduced=(0.5 * macro_height*thickness_plate*Global_F_external*time_step)/100
+    print("The load percentage:",time_step)
     count=0
     while(np.linalg.norm(R_delta_u,np.inf) > (0.005*np.linalg.norm(Global_displacement,np.inf))):
         count=count+1
@@ -279,7 +288,7 @@ for time_step in range(1,11,1): # time step is split into 10 parts
         #print("G:",G)
         Reduced_Global_stiffness_matrix=Global_stiffness_matrixs
         X=Global_stiffness_matrixs -np.transpose(Global_stiffness_matrixs)
-        print(X)
+        #print(X)
         Reduced_displacement=Global_displacement
         Reduced_G=G
         A=[] #### Boundary condition ####
@@ -316,7 +325,6 @@ for time_step in range(1,11,1): # time step is split into 10 parts
         Global_displacement=(Reduced_displacement.reshape(2*total_nodes,1))
     print("displacement:\n",Global_displacement)
     print("Iteration number:",count)
-
 x=[]
 y=[]
 for i in range(0,len(Global_displacement),1):
@@ -335,7 +343,7 @@ plt.title("Final positions of the node")
 plt.show()
 
 print("The virtual work of the system with irregular meshing is:\n")
-print( (Global_stiffness_matrixs@ Global_displacement) - Global_F_external)
+print( (Global_stiffness_matrixs@ Global_displacement) - Global_F_external_reduced)
 #### Post-processing ####
 Element_x=np.linspace(0,macro_length,50)
 Element_y=np.linspace(0,macro_height,50)

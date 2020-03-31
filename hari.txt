@@ -1,0 +1,77 @@
+commit fd8faa8faf6ffaade9f4811a250eca73910b9575
+Author: hari <harikeshava089@gmail.comm>
+Date:   Wed Mar 25 02:08:08 2020 +0530
+
+    cleaning the code
+
+commit 68bcc83cb5430e2a22d13c6a6196641493fe584e
+Author: hari <harikeshava089@gmail.comm>
+Date:   Wed Feb 26 16:51:51 2020 +0530
+
+    macro_micro coupled file
+
+commit dd85f2f36b220d192cd3ef0afafba297504bee9b
+Author: hari <harikeshava089@gmail.comm>
+Date:   Mon Feb 10 18:25:19 2020 +0530
+
+    macro and micro program updated
+
+commit be6ba97f61106c75550282ab83e3d1cd65e7baea
+Author: hari <harikeshava089@gmail.comm>
+Date:   Mon Feb 10 17:55:28 2020 +0530
+
+    macro and micro program changes updated
+
+commit a2667c4388b65f5db61c106a2f89d301660761b9
+Author: hari <harikeshava089@gmail.comm>
+Date:   Wed Feb 5 23:20:54 2020 +0530
+
+    Quadrilateral meshing technique
+
+commit 7491714a09951625f1b95825fc6e66d418cc876d
+Author: hari <harikeshava089@gmail.comm>
+Date:   Wed Feb 5 23:17:54 2020 +0530
+
+    The macro-scale with 2D quadrilateral Element
+
+commit c1e920613e42f721fe6d8108d028536ba234bb72
+Author: hari <harikeshava089@gmail.comm>
+Date:   Mon Feb 3 22:14:55 2020 +0530
+
+    The macro-scale comments and micro scale elastic part is developed- 50hr
+
+commit c330e27c6d716fc81cf5b7c1571e49975431a55b
+Author: hari <harikeshava089@gmail.comm>
+Date:   Tue Jan 28 01:19:37 2020 +0530
+
+    Small corrections made
+
+commit e73ec9f2da8bd61c7ae816996ce3ff34c55390d7
+Author: hari <harikeshava089@gmail.comm>
+Date:   Tue Jan 28 01:05:52 2020 +0530
+
+    20 hrs of work for micro_stiffness pattern
+
+commit 19bef66cd7bb16f1862102e69636cd0661857eea
+Author: hari <harikeshava089@gmail.comm>
+Date:   Fri Jan 10 03:18:51 2020 +0530
+
+    macro programing 70h
+
+commit e5839cb7bae844225dfa552358c8f317490ef23d
+Author: hari <harikeshava089@gmail.comm>
+Date:   Sat Dec 21 23:21:19 2019 +0530
+
+    10h
+
+commit ead510c7ba907bfc9a5a371bdc15aeef93e413b6
+Author: hari <harikeshava089@gmail.comm>
+Date:   Sat Dec 21 23:18:10 2019 +0530
+
+    20h
+
+commit 17a1f4173526bbd60c858d062c511270a72cfb37
+Author: Harikeshava <52134291+Harikeshava@users.noreply.github.com>
+Date:   Sat Dec 21 17:04:54 2019 +0000
+
+    Initial commit

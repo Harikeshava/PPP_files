@@ -518,9 +518,6 @@ u_element=np.zeros((8,1))
 F_int_Element=np.zeros((8,1))
 #print("Enter the forces value in newton for each node of interest\n")
 #print("Enter zero if no forces is applied on the node\n")
-## Force Initialization ## For runnin the program for test cases the below 2 lines should be commented 
-Global_F_external[2][0]= force_mag
-Global_F_external[6][0]= force_mag
 ## Meshing Variables ##
 Xe=np.array([[0,0],[Le,0],[0,He],[Le,He]])
 x_disp=np.array([[Le,0],[Le,0],[Le,0],[Le,0]])
@@ -555,6 +552,14 @@ for i in range(0,M+1): # for segregating the element nodes as a group using a sq
         Node_Numbering[i][j]=k 
         k=k+1
 print(Node_Numbering)
+## Force Initialization ## For runnin the program for test cases the below 2 lines should be commented 
+#Global_F_external[2][0]= force_mag
+#Global_F_external[6][0]= force_mag
+for j in range(0,M+1,1):    
+    for n, a in data.items():    # for printing the value's key
+        if a == Node_Numbering[j][N]:
+            i=n
+            Global_F_external[i][0]= force_mag
 ######## Analysis ########
 ### The data-set obtained from the part of pre-processing is used as the input for our FEM analysis. The code below will solve the system of equation to find the 
 ### unknowns,that is the external parameters. The system has 3 main variables the Total stiffness matrixs, total displacement matrix(the unknowns) and the known 
@@ -573,10 +578,10 @@ print(Node_Numbering)
 ### which is coming in for the analysis. The material routine is called in this function for the calculation purpose, for obtaining the material tangent stiffness 
 ### matrixs and elements stress update(for the calculation of the F_e_interanl).
 
-for time_step in range(1,11,1): # time step is split into 10 parts
+for time_step in range(5,105,5): # 5 % increment at each iteration
     R_delta_u=np.ones((2*total_nodes,1))
     Global_displacement=np.zeros((2*total_nodes,1))
-    Global_F_external_reduced=(thickness_plate*Global_F_external*time_step)/10
+    Global_F_external_reduced=(0.5 * macro_height*thickness_plate*Global_F_external*time_step)/100
     count=0
     while(np.linalg.norm(R_delta_u,np.inf) > (0.005*np.linalg.norm(Global_displacement,np.inf))):
         count=count+1
