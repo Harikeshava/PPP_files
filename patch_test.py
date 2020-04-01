@@ -327,18 +327,6 @@ for time_step in range(5,105,5): # time step-5% increment
         Global_displacement=(Reduced_displacement.reshape(2*total_nodes,1))
     print("displacement:\n",Global_displacement)
     print("Iteration number:",count)
-x=[]
-y=[]
-for i in range(0,len(Global_displacement),1):
-    if(i%2==0):
-        x.append(Global_displacement[i][0])
-    else:
-        y.append(Global_displacement[i][0])
-print(x,y)
-x=np.asarray(x)
-y=np.asarray(y)
-x=x.reshape((M+1,N+1))
-y=y.reshape((M+1,N+1))
 #print("The virtual work of the system with irregular meshing is:\n")
 #print( (Global_stiffness_matrixs@ Global_displacement) - Global_F_external_reduced)
 #### Post-processing ####
@@ -355,8 +343,8 @@ for i in range(0,len(xx),1):
         N_2=  - ((xx[i][j])*(yy[i][j]-macro_height))*(1/Aera)
         N_3=  - ((xx[i][j]-macro_length)*(yy[i][j]))*(1/Aera)
         N_4=  ((xx[i][j])*(yy[i][j]))*(1/Aera)
-        U_x[i][j]= N_1*x[0][0] + N_2 * x[0][N] + N_3 * x[M][0] + N_4 * x[M][N]
-        U_y[i][j]= N_1 * y[0][0] + N_2 * y[0][N] + N_3 * y[M][0] + N_4 * y[M][N]
+        U_x[i][j]= N_1*x[0] + N_2 * x[1] + N_3 * x[2] + N_4 * x[3]
+        U_y[i][j]= N_1 * y[0] + N_2 * y[1] + N_3 * y[2] + N_4 * y[3]
 print(U_x)
 print(U_y)
 # The displacement plots along x and y direction
@@ -395,9 +383,9 @@ for i in range(0,len(xx),1):
         N_2_y=  - ((xx[i][j]))*(1/Aera)
         N_3_y=  - ((xx[i][j]-macro_length))*(1/Aera)
         N_4_y=  ((xx[i][j]))*(1/Aera)
-        strain_x[i][j]= N_1_x*x[0][0] + N_2_x * x[0][N] + N_3_x * x[M][0] + N_4_x * x[M][N]
-        strain_y[i][j]= N_1_y * y[0][0] + N_2_y * y[0][N] + N_3_y * y[M][0] + N_4_y * y[M][N]
-        strain_xy[i][j]= N_1_x*y[0][0] + N_2_x * y[0][N] + N_3_x * y[M][0] + N_4_x * y[M][N] + N_1_y * x[0][0] + N_2_y * x[0][N] + N_3_y * x[M][0] + N_4_y * x[M][N]
+        strain_x[i][j]= N_1_x*x[0] + N_2_x * x[1] + N_3_x * x[2] + N_4_x * x[3]
+        strain_y[i][j]= N_1_y * y[0] + N_2_y * y[1] + N_3_y * y[2] + N_4_y * y[3]
+        strain_xy[i][j]= N_1_x*y[0] + N_2_x * y[1] + N_3_x * y[2] + N_4_x * y[3] + N_1_y * x[0] + N_2_y * x[1] + N_3_y * x[2] + N_4_y * x[3]
         strain=np.array([[strain_x[i][j]],[strain_y[i][j]],[strain_xy[i][j]]])
         stress_vector = C_tangential @ strain
         stress_x[i][j]= stress_vector[0][0]

@@ -664,6 +664,7 @@ for time_step in range(5,105,5): # 5 % increment at each iteration
                 Global_F_internal=Global_F_internal + F
                 Gauss_point_plastic_strain[P]=Macro_plastic_strain
                 Gauss_point_alpha[P]=Macro_drag_alpha
+            Xe=np.array([[0,0],[Le,0],[0,He],[Le,He]])
             if((M*N)>1):
                 Xe=Xe + y_disp       
         #print('The obtained stiffness matrixa is:\n')
@@ -722,14 +723,12 @@ for i in range(0,len(Global_displacement),1):
         y.append(Global_displacement[i][0])
 print(x,y)
 
-Final_displacment = np.append(np.vstack(x),np.vstack(y),axis=1)
-Final_position= Xe + Final_displacment
-plt.plot((Final_position[0])*10**10,(Final_position[1])*10**10)
-plt.xlabel("x(m)")
-plt.ylabel("y(m)")
-plt.title("Final positions of the node")
-plt.show()
-
+x=np.asarray(x)
+y=np.asarray(y)
+x=x.reshape((M+1,N+1))
+y=y.reshape((M+1,N+1))
+#print("The virtual work of the system with irregular meshing is:\n")
+#print( (Global_stiffness_matrixs@ Global_displacement) - Global_F_external_reduced)
 #### Post-processing ####
 Element_x=np.linspace(0,macro_length,50)
 Element_y=np.linspace(0,macro_height,50)
@@ -744,8 +743,8 @@ for i in range(0,len(xx),1):
         N_2=  - ((xx[i][j])*(yy[i][j]-macro_height))*(1/Aera)
         N_3=  - ((xx[i][j]-macro_length)*(yy[i][j]))*(1/Aera)
         N_4=  ((xx[i][j])*(yy[i][j]))*(1/Aera)
-        U_x[i][j]= N_1*x[0] + N_2 * x[1] + N_3 * x[2] + N_4 * x[3]
-        U_y[i][j]= N_1 * y[0] + N_2 * y[1] + N_3 * y[2] + N_4 * y[3]
+        U_x[i][j]= N_1*x[0][0] + N_2 * x[0][N] + N_3 * x[M][0] + N_4 * x[M][N]
+        U_y[i][j]= N_1 * y[0][0] + N_2 * y[0][N] + N_3 * y[M][0] + N_4 * y[M][N]
 print(U_x)
 print(U_y)
 # The displacement plots along x and y direction
@@ -763,8 +762,7 @@ ly = plt.ylabel("y (m)")
 plt.title("Displacement of the nodes along y-direction")
 fig.colorbar(cmap)
 plt.show(fig)
-
-#The stress and strain plots along x and y
+# The stress interpolations
 strain_x=np.zeros((len(Element_x),len(Element_y)))
 strain_y=np.zeros((len(Element_x),len(Element_y)))
 strain_xy=np.zeros((len(Element_x),len(Element_y)))
@@ -785,22 +783,22 @@ for i in range(0,len(xx),1):
         N_2_y=  - ((xx[i][j]))*(1/Aera)
         N_3_y=  - ((xx[i][j]-macro_length))*(1/Aera)
         N_4_y=  ((xx[i][j]))*(1/Aera)
-        strain_x[i][j]= N_1_x*x[0] + N_2_x * x[1] + N_3_x * x[2] + N_4_x * x[3]
-        strain_y[i][j]= N_1_y * y[0] + N_2_y * y[1] + N_3_y * y[2] + N_4_y * y[3]
-        strain_xy[i][j]= N_1_x*y[0] + N_2_x * y[1] + N_3_x * y[2] + N_4_x * y[3] + N_1_y * x[0] + N_2_y * x[1] + N_3_y * x[2] + N_4_y * x[3]
+        strain_x[i][j]= N_1_x*x[0][0] + N_2_x * x[0][N] + N_3_x * x[M][0] + N_4_x * x[M][N]
+        strain_y[i][j]= N_1_y * y[0][0] + N_2_y * y[0][N] + N_3_y * y[M][0] + N_4_y * y[M][N]
+        strain_xy[i][j]= N_1_x*y[0][0] + N_2_x * y[0][N] + N_3_x * y[M][0] + N_4_x * y[M][N] + N_1_y * x[0][0] + N_2_y * x[0][N] + N_3_y * x[M][0] + N_4_y * x[M][N]
         strain=np.array([[strain_x[i][j]],[strain_y[i][j]],[strain_xy[i][j]]])
         stress_vector = C_tangential @ strain
         stress_x[i][j]= stress_vector[0][0]
         stress_y[i][j]= stress_vector[1][0]
         stress_xy[i][j]= stress_vector[2][0]
 
-
+print(strain_x)
 fig, ax = plt.subplots()
-cmap = plt.contourf(xx, yy, strain_x)
+cmap = ax.contourf(xx, yy, strain_x)
 lx = plt.xlabel("x (m)")
 ly = plt.ylabel("y (m)")
 plt.title("strain xx")
-fig.colorbar(cmap)
+plt.colorbar(cmap)
 plt.show(fig)
 
 fig, ax = plt.subplots()
