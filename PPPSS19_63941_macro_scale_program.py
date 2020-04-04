@@ -49,6 +49,7 @@ def Material_routine(MU,lamda,u_element,B,h,B_ps,C_al,P,j,yield_stress,stress_33
     if(mag_deviatoric > 0):
         Norm_vector=deviatoric_stress/mag_deviatoric
     drag_stress=h*alpha
+
     plastic_fn=mag_deviatoric-(2/3)**(1/2)*(yield_stress + drag_stress)
     if(plastic_fn<10**-6):
         print("Elastic calculation")
@@ -74,7 +75,8 @@ def Material_routine(MU,lamda,u_element,B,h,B_ps,C_al,P,j,yield_stress,stress_33
         S3 = (3*MU/(3*MU + h))
         beta_1= 1-(S2*S3)
         beta_2= (1-S2)*S3
-        term_1=Norm_vector @ np.transpose(Norm_vector)
+        n=Norm_vector
+        term_1=np.array([[n[0][0]*n[0][0],n[0][0]*n[1][0],n[0][0]*n[2][0],0,0,0],[n[1][0]*n[0][0],n[1][0]*n[1][0],n[1][0]*n[2][0],0,0,0],[n[2][0]*n[0][0],n[2][0]*n[1][0],n[2][0]*n[2][0],0,0,0],[0,0,0,n[3][0]*n[3][0],0,0],[0,0,0,0,n[4][0]*n[4][0],0],[0,0,0,0,0,n[5][0]*n[5][0]]]) #Norm_vector @ np.transpose(Norm_vector)
         deviatoric_tangent_stiffness= (2*MU*beta_1*P_sym) - (2*MU*beta_2*term_1)
     k= lamda + (2/3)*MU 
     stress_element=deviatoric_stress + k*trace_strain*Identity_matrixs
@@ -137,8 +139,8 @@ Poissons_ratio=0.30
 yield_stress=95E6
 h=200e6 #Hardening parameter
 force_mag = 100 # N/m^2 # forces distributions magnitude
-N=2 #eval(input('number of elements in the x-direction\n')) # No of columns
-M=2 #eval(input('number of elements in the y-direction\n')) # No of rows
+N=1 #eval(input('number of elements in the x-direction\n')) # No of columns
+M=1 #eval(input('number of elements in the y-direction\n')) # No of rows
 ###############################################################################
 MU=(Youngs_modulus/(2*(1+Poissons_ratio)))
 lamda=((Poissons_ratio*Youngs_modulus)/((1-2*Poissons_ratio)*(1+Poissons_ratio)))
@@ -180,7 +182,7 @@ y_disp=np.array([[0,He],[0,He],[0,He],[0,He]])
 ############################
 ######## Testing Parameters ######
 #For verifying the test cases, follow the instructions in the manual section (to run the program for the test cases)
-#tension_disp=np.array([[0,0],[5.55*10**-9,1.88*10**-10],[0,0],[-6.33*10**-9,1.97*10**-10]])
+#tension_disp=np.array([[4.909*10^-9,0],[4.909*10^-9,0],[4.909*10^-9,0],[4.909*10^-9,0]])
 #Xe=np.array([[0,0],[Le,0],[0,He],[Le,He]]) #+ tension_disp
 #Global_displacement[2][0]= 4.909*10**-7 
 #Global_displacement[3][0]= 7.748*10**-8

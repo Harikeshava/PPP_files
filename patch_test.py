@@ -137,8 +137,8 @@ Poissons_ratio=0.30
 yield_stress=95E6
 h=200e6 #Hardening parameter
 force_mag = 100 # N/m^2 # forces distributions magnitude
-N=2 #eval(input('number of elements in the x-direction\n')) # No of columns
-M=2 #eval(input('number of elements in the y-direction\n')) # No of rows
+N=1 #eval(input('number of elements in the x-direction\n')) # No of columns
+M=1 #eval(input('number of elements in the y-direction\n')) # No of rows
 ###############################################################################
 MU=(Youngs_modulus/(2*(1+Poissons_ratio)))
 lamda=((Poissons_ratio*Youngs_modulus)/((1-2*Poissons_ratio)*(1+Poissons_ratio)))
@@ -180,12 +180,12 @@ y_disp=np.array([[0,He],[0,He],[0,He],[0,He]])
 ############################
 ######## Testing Parameters ######
 #For verifying the test cases, follow the instructions in the manual section (to run the program for the test cases)
-#tension_disp=np.array([[0,0],[5.55*10**-9,1.88*10**-10],[0,0],[-6.33*10**-9,1.97*10**-10]])
-#Xe=np.array([[0,0],[Le,0],[0,He],[Le,He]]) #+ tension_disp
-#Global_displacement[2][0]= 4.909*10**-7 
-#Global_displacement[3][0]= 7.748*10**-8
-#Global_displacement[4][0]= -4.909*10**-7
-#Global_displacement[5][0]= -7.748*10**-8
+tension_disp=np.array([[4.909*10**-7,0],[-3.27266*10**-8,0],[3.27266*10**-8,0],[-4.909*10**-7,0]])
+Xe=np.array([[0,0],[Le,0],[0,He],[Le,He]]) + tension_disp
+Global_displacement[2][0]= 4.909*10**-7 
+Global_displacement[3][0]=  7.748*10**-8  #-4.909*10**-7
+Global_displacement[4][0]= -4.909*10**-7
+Global_displacement[5][0]= -7.748*10**-8
 #### Boundary condition ####
 #A=np.array([[2],[3],[4],[5]]) The variable A array should be uncommented in the line 293 of the program line below, where the array A holds the boundary condiitons
 #############################
@@ -214,7 +214,7 @@ for j in range(0,M+1,1):
     for n, a in data.items():    # for printing the value's key
         if a == Node_Numbering[j][N]:
             i=n
-            Global_F_external[i][0]= force_mag
+#            Global_F_external[i][0]= force_mag
                     
 ######## Analysis ########
 ### The data-set obtained from the part of pre-processing is used as the input for our FEM analysis. The code below will solve the system of equation to find the 
@@ -235,10 +235,10 @@ for j in range(0,M+1,1):
 ### matrixs and elements stress update(for the calculation of the F_e_interanl).
 x=[]
 y=[]
-for time_step in range(5,105,5): # time step-5% increment
+for time_step in range(1,2,1): # time step-5% increment
     R_delta_u=np.ones((2*total_nodes,1))
-    Global_displacement=np.zeros((2*total_nodes,1)) ## comment this line for making it displacement driven
-    Global_F_external_reduced=(0.5 * macro_height*thickness_plate*Global_F_external*time_step)/100
+    #Global_displacement=np.zeros((2*total_nodes,1)) ## comment this line for making it displacement driven
+    #Global_F_external_reduced=(0.5 * macro_height*thickness_plate*Global_F_external*time_step)/100
     print("The load percentage:",time_step)
     count=0
     while(np.linalg.norm(R_delta_u,np.inf) > (0.005*np.linalg.norm(Global_displacement,np.inf))):
@@ -304,7 +304,7 @@ for time_step in range(5,105,5): # time step-5% increment
         A=np.asarray(A) #### Boundary condition ####
         #print(A)
         #### The below A array values should be used for the test cases
-        #A=np.array([[2],[3],[4],[5]])
+        A= np.array([[2],[3],[4],[5]]) #np.array([[0],[1],[3],[5],[6],[7]]) 
         if(count==1):
             R_delta_u=np.delete(delta_u,A,axis=0)
         Reduced_Global_stiffness_matrix= np.delete(Reduced_Global_stiffness_matrix,A,axis=0)
