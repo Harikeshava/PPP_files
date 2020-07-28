@@ -26,8 +26,8 @@ def Material_routine(MU,lamda,u_element,B,h,B_ps,C_al,P,j,yield_stress,stress_33
     Strain_element= B @ u_element
     for i in range(2,5,1):
         Strain_element= np.insert(Strain_element,i,0,axis=0)
-    for i in range(3,6,1):
-       Strain_element[i][0]=(Strain_element[i][0])/2
+    #for i in range(3,6,1):
+    #   Strain_element[i][0]=(Strain_element[i][0])/2
     print("Strain_element:\n",Strain_element)
     trace_strain= Strain_element[0][0]+Strain_element[1][0]+Strain_element[2][0]
     Identity_matrixs=np.array([[1],[1],[1],[0],[0],[0]])
@@ -134,11 +134,11 @@ macro_length=100 * 10**-2 #(100cm)
 macro_height=50 * 10**-2  #(50cm)
 thickness_plate=500*10**-2  #(500cm)
 ### Material property variables
-Youngs_modulus= 70E9 #N/meters
+Youngs_modulus= 70e9 #N/meters
 Poissons_ratio=0.30
 yield_stress=95E6
 h=200e6 #Hardening parameter
-force_mag = 100 # N/m^2 # forces distributions magnitude
+force_mag = 170e6 # N/m^2 # forces distributions magnitude
 N=1 #eval(input('number of elements in the x-direction\n')) # No of columns
 M=1 #eval(input('number of elements in the y-direction\n')) # No of rows
 ###############################################################################
